@@ -210,18 +210,21 @@ class PDFCorpus:
             paragraph_doc = self.nlp(paragraph)
 
             save = sentence_id 
-            for sent in paragraph_doc.sents:
-                cleaned_sent = self.__clean_content(sent.text)
-                if not cleaned_sent.strip():
-
-                    for token in sent:
-                        token_id += 1
-                        print(f'doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token}')
+            for sentence in paragraph_doc.sents:
+                cleaned_sentence = self.__clean_content(sentence.text)
+                if len(cleaned_sentence.strip()) != 0:
+                    # print(cleaned_sent)
+                    # print()
+                    sentence_doc = self.nlp(cleaned_sentence)
+                    for token in sentence_doc:
+                        if len(token.text.strip()) != 0:
+                            token_id += 1
+                            print(f'doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}')
                     
                     sentence_id += 1
 
-            if sentence_id == save:
-                pass
+            if sentence_id != save:
+                paragraph_id += 1
 
     
 
