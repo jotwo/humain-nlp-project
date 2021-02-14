@@ -122,15 +122,30 @@ class PDFCorpusPreprocessor:
 
 
 class PDFCorpus:
-    def __init__(self, pdfs_dir_path):
+    # def __init__(self, pdfs_dir_path):
+
+    #     self.nlp = spacy.load('en_core_web_sm')
+
+    #     self.pdfs_dir_path = pdfs_dir_path
+        
+    #     pdfs_names = [
+    #         r for r in os.listdir(self.pdfs_dir_path) if r.endswith('.pdf')
+    #     ]
+
+    #     self.docs_df = pd.DataFrame(columns=['name'])
+    #     self.docs_df.rename_axis('doc_id', axis='index', inplace=True)
+    #     self.paragraphs_df = pd.DataFrame(columns=['doc_id', 'content'])
+    #     self.paragraphs_df.rename_axis('paragraph_id', axis='index', inplace=True)
+    #     self.sentences_df = pd.DataFrame(columns=['paragraph_id', 'content'])
+    #     self.sentences_df.rename_axis('sentence_id', axis='index', inplace=True)
+    #     self.words_df = pd.DataFrame(columns=['sentence_id', 'content'])
+    #     self.words_df.rename_axis('word_id', axis='index', inplace=True)
+
+    #     self._build_tables(pdfs_names)
+
+    def __init__(self):
 
         self.nlp = spacy.load('en_core_web_sm')
-
-        self.pdfs_dir_path = pdfs_dir_path
-        
-        pdfs_names = [
-            r for r in os.listdir(self.pdfs_dir_path) if r.endswith('.pdf')
-        ]
 
         self.docs_df = pd.DataFrame(columns=['name'])
         self.docs_df.rename_axis('doc_id', axis='index', inplace=True)
@@ -141,10 +156,103 @@ class PDFCorpus:
         self.words_df = pd.DataFrame(columns=['sentence_id', 'content'])
         self.words_df.rename_axis('word_id', axis='index', inplace=True)
 
-        self._build_tables(pdfs_names)
+        self.corpus_df = pd.DataFrame(columns=['doc_id', 'paragraph_id', 'sentence_id', 'token'])
+        self.corpus_df.rename_axis('token_id', axis='index', inplace=True)
+
+    def add_pdf(self, pdf_filepath):
+        
+        # at this stage we are supposed to deal with '.pdf' files only
+        # => 4 last characters are corresponding to '.pdf' and we remove them
+        pdf_name = os.path.basename(pdf_filepath)[:-4]
+
+        self.docs_df =  self.docs_df.append({'name': pdf_name}, ignore_index=True)
+
+        rsrcmgr = PDFResourceManager()
+
+        device = PDFPageAggregator(rsrcmgr, laparams=LAParams())
+
+        interpreter = PDFPageInterpreter(rsrcmgr, device)
+
+        paragraphs_list = []
+
+        with open(pdf_filepath, 'rb') as document:
+            for page in PDFPage.get_pages(document):
+                interpreter.process_page(page)
+                layout = device.get_result()
+                for element in layout:
+                    if isinstance(element, LTTextBoxHorizontal):
+                        paragraphs_list.append(element.get_text())
+    
+        new_doc_id = len(self.docs_df) -1
+        self._add_to_tables(new_doc_id, paragraphs_list)
 
 
             
+    def _add_to_tables(self, doc_id, paragraphs_list):
+        
+        # paragraphs_df = pd.DataFrame({'content': paragraphs_list})
+
+        # print(paragraphs_df)
+        # print(self.docs_df)
+
+        if self.corpus_df.empty:
+            paragraph_id = 0
+            sentence_id = 0
+            token_id = 0
+        
+        else:
+            last_corpus_entry = self.corpus_df.iloc[-1]
+            paragraph_id = last_corpus_entry['paragraph_id'] + 1
+            sentence_id = last_corpus_entry['sentence_id'] + 1
+            token_id = last_corpus_entry.name + 1
+        
+        for paragraph in paragraphs_list:
+            paragraph_doc = self.nlp(paragraph)
+
+            save = sentence_id 
+            for sent in paragraph_doc.sents:
+                cleaned_sent = self.__clean_content(sent.text)
+                if not cleaned_sent.strip():
+
+                    for token in sent:
+                        token_id += 1
+                        print(f'doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token}')
+                    
+                    sentence_id += 1
+
+            if sentence_id == save:
+                pass
+
+    
+
+    def __clean_content(self, text):
+        """Make text lowercase, remove text in square brackets, remove punctuation, remove words containing numbers and other unwanted substrings."""
+        
+        url_regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+        email_regex = "[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}"
+        # remove URLs
+        text = re.sub(url_regex, "", text)
+        # remove emails
+        text = re.sub(email_regex, "", text)
+        # replace dashes by spaces
+        text = re.sub("[-–_]", " ", text)
+        # => to lower case letters
+        text = text.lower()
+        # remove punctuation
+        text = re.sub(f"[{re.escape(string.punctuation)}]", "", text)
+        # remove numbers or "words" containing numbers
+        text = re.sub("\w*\d\w*", "", text)
+        # replace newline character with space
+        text = re.sub("\n", " ", text)
+        # remove greek characters
+        text = re.sub("[α-ωΑ-Ω]*", "", text)
+        # remove some remaining parts of math expressions
+        text = re.sub("ˆ[A-Za-z]*", "", text)
+
+        return text
+        
+
+
     def _build_tables(self, pdfs_names):
         # at this stage we are sure to deal with '.pdf' files only
         # => 4 last characters are corresponding to '.pdf'
