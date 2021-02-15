@@ -1,7 +1,8 @@
 import os
 import re
-import string
+import datetime as dt
 from io import StringIO
+
 
 import pandas as pd
 import spacy
@@ -17,13 +18,12 @@ class PDFCorpus:
 
         self.nlp = spacy.load('en_core_web_sm')
 
-        self.docs_df = pd.DataFrame(columns=['name'])
+        self.docs_df = pd.DataFrame(columns=['date', 'name'])
         self.docs_df.rename_axis('doc_id', axis='index', inplace=True)
-        self.paragraphs_df = pd.DataFrame(columns=['content'])
+        self.paragraphs_df = pd.DataFrame(columns=['doc_id', 'paragraph'])
         self.paragraphs_df.rename_axis('paragraph_id', axis='index', inplace=True)
-        self.sentences_df = pd.DataFrame(columns=['content'])
+        self.sentences_df = pd.DataFrame(columns=['doc_id', 'paragraph_id', 'sentence'])
         self.sentences_df.rename_axis('sentence_id', axis='index', inplace=True)
-
         self.tokens_df = pd.DataFrame(
             columns=['doc_id', 'paragraph_id', 'sentence_id', 'token']
         )
@@ -53,7 +53,9 @@ class PDFCorpus:
         # => 4 last characters are corresponding to '.pdf' and we remove them
         pdf_name = os.path.basename(pdf_filepath)[:-4]
 
-        self.docs_df = self.docs_df.append({'name': pdf_name}, ignore_index=True)
+        today_date = pd.to_datetime(dt.date.today())
+
+        self.docs_df = self.docs_df.append({'date': today_date, 'name': pdf_name}, ignore_index=True)
         self.docs_df.rename_axis('doc_id', axis='index', inplace=True)
 
         rsrcmgr = PDFResourceManager()
@@ -73,9 +75,10 @@ class PDFCorpus:
                         paragraphs_list.append(element.get_text())
 
         new_doc_id = len(self.docs_df) - 1
+        
         self._add_to_tables(new_doc_id, paragraphs_list)
 
-    def _add_to_tables(self, pdf_id, paragraphs_list):
+    def _add_to_tables(self, doc_id, paragraphs_list):
 
         if self.tokens_df.empty:
             paragraph_id = 0
@@ -94,6 +97,9 @@ class PDFCorpus:
         for paragraph in paragraphs_list:
             paragraph_doc = self.nlp(paragraph)
 
+            # last_sentence contains the ID of the last added sentence
+            # used to know if the current paragraph is to be kept or not
+            # (not kept if only composed of discarded meaningless sentences)
             last_sentence_id = sentence_id
 
             for sentence in paragraph_doc.sents:
@@ -101,6 +107,7 @@ class PDFCorpus:
                 cleaned_sentence = self.__clean_content(sentence.text)
 
                 # test if the cleaned sentence is not composed of whitespaces only
+                # in that case we discard this meaningless sentence
                 if len(cleaned_sentence.strip()) != 0:
 
                     sentence_doc = self.nlp(cleaned_sentence)
@@ -110,23 +117,23 @@ class PDFCorpus:
                         # we are sure that the token is at least composed of one meaningful character at this point
                         if len(token.text.strip()) != 0:
                             print(
-                                f'doc_id: {pdf_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}'
+                                f'doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}'
                             )
                             corpus_dict[token_id] = [
-                                pdf_id,
+                                doc_id,
                                 paragraph_id,
                                 sentence_id,
                                 token.text,
                             ]
                             token_id += 1
 
-                    sentences_dict[sentence_id] = [cleaned_sentence]
-
+                    sentences_dict[sentence_id] = [doc_id, paragraph_id, cleaned_sentence]
                     sentence_id += 1
 
+            # check if the paragraph wasn't composed only of discarded sentences
+            # in that case, we also discard the paragraph
             if sentence_id != last_sentence_id:
-                paragraphs_dict[paragraph_id] = [paragraph]
-
+                paragraphs_dict[paragraph_id] = [doc_id, paragraph]
                 paragraph_id += 1
 
         self.tokens_df = self.tokens_df.append(
@@ -139,12 +146,12 @@ class PDFCorpus:
         self.tokens_df.rename_axis('token_id', axis='index', inplace=True)
 
         self.sentences_df = self.sentences_df.append(
-            pd.DataFrame.from_dict(sentences_dict, orient='index', columns=['content'])
+            pd.DataFrame.from_dict(sentences_dict, orient='index', columns=['doc_id', 'paragraph_id', 'sentence'])
         )
         self.sentences_df.rename_axis('sentence_id', axis='index', inplace=True)
 
         self.paragraphs_df = self.paragraphs_df.append(
-            pd.DataFrame.from_dict(paragraphs_dict, orient='index', columns=['content'])
+            pd.DataFrame.from_dict(paragraphs_dict, orient='index', columns=['doc_id', 'paragraph'])
         )
         self.paragraphs_df.rename_axis('paragraph_id', axis='index', inplace=True)
 
@@ -158,13 +165,14 @@ class PDFCorpus:
         # remove emails
         text = re.sub(email_regex, "", text)
         # remove numbers or "words" containing numbers
+        # text = re.sub("(\w+\d\w*|\w*\d\w+)", "", text)
         text = re.sub("\w*\d\w*", "", text)
         # remove name initials (capital letter followed by a dot)
         text = re.sub("[A-Z]\.", "", text)
         # replace every non alphanumerical or whitespace or single quote character by a single space
         text = re.sub("[^a-zA-Z\d\s'’]+", " ", text)
         # replace every sequence of one ore more whitespace by a single space
-        text = re.sub("[\s]+", " ", text)
+        text = re.sub("\s+", " ", text)
         # => to lower case letters
         text = text.lower()
 
