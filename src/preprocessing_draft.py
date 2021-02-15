@@ -1,10 +1,10 @@
-﻿import os
+import os
 import re
 import string
 from io import StringIO
 
 import pandas as pd
-import spacy
+# import spacy
 
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.layout import LAParams, LTTextBoxHorizontal
@@ -15,14 +15,14 @@ from pdfminer.pdfpage import PDFPage
 class PDFCorpus:
     def __init__(self):
 
-        self.nlp = spacy.load("en_core_web_sm")
+        # self.nlp = spacy.load("en_core_web_sm")
 
         self.docs_df = pd.DataFrame(columns=["name"])
         self.docs_df.rename_axis("doc_id", axis="index", inplace=True)
         self.paragraphs_df = pd.DataFrame(columns=["content"])
         self.paragraphs_df.rename_axis("paragraph_id", axis="index", inplace=True)
-        self.sentences_df = pd.DataFrame(columns=["content"])
-        self.sentences_df.rename_axis("sentence_id", axis="index", inplace=True)
+        # self.sentences_df = pd.DataFrame(columns=["content"])
+        # self.sentences_df.rename_axis("sentence_id", axis="index", inplace=True)
 
         self.corpus_df = pd.DataFrame(
             columns=["doc_id", "paragraph_id", "sentence_id", "token"]
@@ -56,80 +56,81 @@ class PDFCorpus:
             for page in PDFPage.get_pages(document):
                 interpreter.process_page(page)
                 layout = device.get_result()
-                for element in layout:
-                    if isinstance(element, LTTextBoxHorizontal):
-                        paragraphs_list.append(element.get_text())
+                paragraphs_list = [element.get_text() for element in layout if isinstance(element, LTTextBoxHorizontal)]
+                # for element in layout:
+                #     if isinstance(element, LTTextBoxHorizontal):
+                #         paragraphs_list.append(element.get_text())
 
         new_doc_id = len(self.docs_df) - 1
         self._add_to_tables(new_doc_id, paragraphs_list)
 
     def _add_to_tables(self, pdf_id, paragraphs_list):
 
-        if self.corpus_df.empty:
-            paragraph_id = 0
-            sentence_id = 0
-            token_id = 0
-        else:
-            last_corpus_entry = self.corpus_df.iloc[-1]
-            paragraph_id = last_corpus_entry["paragraph_id"] + 1
-            sentence_id = last_corpus_entry["sentence_id"] + 1
-            token_id = last_corpus_entry.name + 1
+        # if self.corpus_df.empty:
+            # paragraph_id = 0
+            # sentence_id = 0
+            # token_id = 0
+        # else:
+        last_corpus_entry = self.corpus_df.iloc[-1]
+        paragraph_id = last_corpus_entry["paragraph_id"] + 1
+            # sentence_id = last_corpus_entry["sentence_id"] + 1
+            # token_id = last_corpus_entry.name + 1
 
-        corpus_dict = {}
-        sentences_dict = {}
+        # corpus_dict = {}
+        # sentences_dict = {}
         paragraphs_dict = {}
 
         for paragraph in paragraphs_list:
-            paragraph_doc = self.nlp(paragraph)
+            # paragraph_doc = self.nlp(paragraph)
 
-            last_sentence_id = sentence_id
+            # last_sentence_id = sentence_id
 
-            for sentence in paragraph_doc.sents:
+            # for sentence in paragraph_doc.sents:
 
-                cleaned_sentence = self.__clean_content(sentence.text)
+                # cleaned_sentence = self.__clean_content(sentence.text)
 
                 # test if the cleaned sentence is not composed of whitespaces only
-                if len(cleaned_sentence.strip()) != 0:
+                # if len(cleaned_sentence.strip()) != 0:
 
-                    sentence_doc = self.nlp(cleaned_sentence)
+                    # sentence_doc = self.nlp(cleaned_sentence)
 
-                    for token in sentence_doc:
-                        # we remove potential whitespaces around the token
-                        # we are sure that the token is at least composed of one meaningful character at this point
-                        if len(token.text.strip()) != 0:
-                            # print(
-                            #     f"doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}"
-                            # )
-                            corpus_dict[token_id] = [
-                                pdf_id,
-                                paragraph_id,
-                                sentence_id,
-                                token,
-                            ]
-                            token_id += 1
+                    # for token in sentence_doc:
+                    #     # we remove potential whitespaces around the token
+                    #     # we are sure that the token is at least composed of one meaningful character at this point
+                    #     if len(token.text.strip()) != 0:
+                    #         # print(
+                    #         #     f"doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}"
+                    #         # )
+                    #         corpus_dict[token_id] = [
+                    #             pdf_id,
+                    #             paragraph_id,
+                    #             sentence_id,
+                    #             token,
+                    #         ]
+                    #         token_id += 1
 
-                    sentences_dict[sentence_id] = [sentence.text]
+                    # sentences_dict[sentence_id] = [sentence.text]
 
-                    sentence_id += 1
+                    # sentence_id += 1
 
-            if sentence_id != last_sentence_id:
+            # if sentence_id != last_sentence_id:
                 paragraphs_dict[paragraph_id] = [paragraph]
 
                 paragraph_id += 1
 
-        self.corpus_df = self.corpus_df.append(
-            pd.DataFrame.from_dict(
-                corpus_dict,
-                orient="index",
-                columns=["doc_id", "paragraph_id", "sentence_id", "token"],
-            )
-        )
-        self.corpus_df.rename_axis("token_id", axis="index", inplace=True)
+        # self.corpus_df = self.corpus_df.append(
+        #     pd.DataFrame.from_dict(
+        #         corpus_dict,
+        #         orient="index",
+        #         columns=["doc_id", "paragraph_id", "sentence_id", "token"],
+        #     )
+        # )
+        # self.corpus_df.rename_axis("token_id", axis="index", inplace=True)
 
-        self.sentences_df = self.sentences_df.append(
-            pd.DataFrame.from_dict(sentences_dict, orient="index", columns=["content"])
-        )
-        self.sentences_df.rename_axis("sentence_id", axis="index", inplace=True)
+        # self.sentences_df = self.sentences_df.append(
+        #     pd.DataFrame.from_dict(sentences_dict, orient="index", columns=["content"])
+        # )
+        # self.sentences_df.rename_axis("sentence_id", axis="index", inplace=True)
 
         self.paragraphs_df = self.paragraphs_df.append(
             pd.DataFrame.from_dict(paragraphs_dict, orient="index", columns=["content"])
