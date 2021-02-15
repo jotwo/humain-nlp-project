@@ -145,24 +145,16 @@ class PDFCorpus:
         text = re.sub(url_regex, "", text)
         # remove emails
         text = re.sub(email_regex, "", text)
-        # replace special dashes by spaces
-        text = re.sub("[–—]+", " ", text)
-        # => to lower case letters
-        text = text.lower()
-        # remove punctuation
-        text = re.sub(f"[{re.escape(string.punctuation)}]", " ", text)
         # remove numbers or "words" containing numbers
         text = re.sub("\w*\d\w*", "", text)
-        # remove greek characters
-        text = re.sub("[α-ωΑ-Ω]+", "", text)
-        # remove some remaining parts of math expressions
-        text = re.sub("ˆ[A-Za-z]*", "", text)
-        # remove different types of bullet
-        text = re.sub("[\u2022\u2023\u25E6\u2043\u2219]", "", text)
-        # replace whitespace characters (newlines, tabs, ...) with space
-        text = re.sub("\s", " ", text)
-        # remove additional unwanted characters
-        text = re.sub("[«»“”©●…↓]", "", text)
+        # remove name initials (capital letter followed by a dot)
+        text = re.sub("[A-Z]\.", "", text)
+        # replace every non alphanumerical or whitespace or single quote character by a single space
+        text = re.sub("[^a-zA-Z\d\s'’]+", " ", text)
+        # replace every sequence of one ore more whitespace by a single space
+        text = re.sub("[\s]+", " ", text)
+        # => to lower case letters
+        text = text.lower()
 
         return text
 
