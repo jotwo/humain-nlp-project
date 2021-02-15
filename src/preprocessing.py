@@ -15,23 +15,35 @@ from pdfminer.pdfpage import PDFPage
 class PDFCorpus:
     def __init__(self):
 
-        self.nlp = spacy.load("en_core_web_sm")
+        self.nlp = spacy.load('en_core_web_sm')
 
-        self.docs_df = pd.DataFrame(columns=["name"])
-        self.docs_df.rename_axis("doc_id", axis="index", inplace=True)
-        self.paragraphs_df = pd.DataFrame(columns=["content"])
-        self.paragraphs_df.rename_axis("paragraph_id", axis="index", inplace=True)
-        self.sentences_df = pd.DataFrame(columns=["content"])
-        self.sentences_df.rename_axis("sentence_id", axis="index", inplace=True)
+        self.docs_df = pd.DataFrame(columns=['name'])
+        self.docs_df.rename_axis('doc_id', axis='index', inplace=True)
+        self.paragraphs_df = pd.DataFrame(columns=['content'])
+        self.paragraphs_df.rename_axis('paragraph_id', axis='index', inplace=True)
+        self.sentences_df = pd.DataFrame(columns=['content'])
+        self.sentences_df.rename_axis('sentence_id', axis='index', inplace=True)
 
-        self.corpus_df = pd.DataFrame(
-            columns=["doc_id", "paragraph_id", "sentence_id", "token"]
+        self.tokens_df = pd.DataFrame(
+            columns=['doc_id', 'paragraph_id', 'sentence_id', 'token']
         )
-        self.corpus_df.rename_axis("token_id", axis="index", inplace=True)
+        self.tokens_df.rename_axis('token_id', axis='index', inplace=True)
+
+    def get_tokens_df(self):
+        return self.tokens_df.copy()
+
+    def get_sentences_df(self):
+        return self.sentences_df.copy()
+
+    def get_paragraphs_df(self):
+        return self.paragraphs_df.copy()
+
+    def get_docs_df(self):
+        return self.docs_df.copy()
 
     def add_multiple_pdfs(self, pdfs_dir_path):
         # we only extract pdf files from this directory
-        pdf_names = [r for r in os.listdir(pdfs_dir_path) if r.endswith(".pdf")]
+        pdf_names = [r for r in os.listdir(pdfs_dir_path) if r.endswith('.pdf')]
         for pdf_name in pdf_names:
             self.add_pdf(os.path.join(pdfs_dir_path, pdf_name))
 
@@ -41,8 +53,8 @@ class PDFCorpus:
         # => 4 last characters are corresponding to '.pdf' and we remove them
         pdf_name = os.path.basename(pdf_filepath)[:-4]
 
-        self.docs_df = self.docs_df.append({"name": pdf_name}, ignore_index=True)
-        self.docs_df.rename_axis("doc_id", axis="index", inplace=True)
+        self.docs_df = self.docs_df.append({'name': pdf_name}, ignore_index=True)
+        self.docs_df.rename_axis('doc_id', axis='index', inplace=True)
 
         rsrcmgr = PDFResourceManager()
 
@@ -52,7 +64,7 @@ class PDFCorpus:
 
         paragraphs_list = []
 
-        with open(pdf_filepath, "rb") as document:
+        with open(pdf_filepath, 'rb') as document:
             for page in PDFPage.get_pages(document):
                 interpreter.process_page(page)
                 layout = device.get_result()
@@ -65,14 +77,14 @@ class PDFCorpus:
 
     def _add_to_tables(self, pdf_id, paragraphs_list):
 
-        if self.corpus_df.empty:
+        if self.tokens_df.empty:
             paragraph_id = 0
             sentence_id = 0
             token_id = 0
         else:
-            last_corpus_entry = self.corpus_df.iloc[-1]
-            paragraph_id = last_corpus_entry["paragraph_id"] + 1
-            sentence_id = last_corpus_entry["sentence_id"] + 1
+            last_corpus_entry = self.tokens_df.iloc[-1]
+            paragraph_id = last_corpus_entry['paragraph_id'] + 1
+            sentence_id = last_corpus_entry['sentence_id'] + 1
             token_id = last_corpus_entry.name + 1
 
         corpus_dict = {}
@@ -98,7 +110,7 @@ class PDFCorpus:
                         # we are sure that the token is at least composed of one meaningful character at this point
                         if len(token.text.strip()) != 0:
                             print(
-                                f"doc_id: {pdf_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}"
+                                f'doc_id: {pdf_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}'
                             )
                             corpus_dict[token_id] = [
                                 pdf_id,
@@ -117,24 +129,24 @@ class PDFCorpus:
 
                 paragraph_id += 1
 
-        self.corpus_df = self.corpus_df.append(
+        self.tokens_df = self.tokens_df.append(
             pd.DataFrame.from_dict(
                 corpus_dict,
-                orient="index",
-                columns=["doc_id", "paragraph_id", "sentence_id", "token"],
+                orient='index',
+                columns=['doc_id', 'paragraph_id', 'sentence_id', 'token'],
             )
         )
-        self.corpus_df.rename_axis("token_id", axis="index", inplace=True)
+        self.tokens_df.rename_axis('token_id', axis='index', inplace=True)
 
         self.sentences_df = self.sentences_df.append(
-            pd.DataFrame.from_dict(sentences_dict, orient="index", columns=["content"])
+            pd.DataFrame.from_dict(sentences_dict, orient='index', columns=['content'])
         )
-        self.sentences_df.rename_axis("sentence_id", axis="index", inplace=True)
+        self.sentences_df.rename_axis('sentence_id', axis='index', inplace=True)
 
         self.paragraphs_df = self.paragraphs_df.append(
-            pd.DataFrame.from_dict(paragraphs_dict, orient="index", columns=["content"])
+            pd.DataFrame.from_dict(paragraphs_dict, orient='index', columns=['content'])
         )
-        self.paragraphs_df.rename_axis("paragraph_id", axis="index", inplace=True)
+        self.paragraphs_df.rename_axis('paragraph_id', axis='index', inplace=True)
 
     def __clean_content(self, text):
         """Make text lowercase, remove text in square brackets, remove punctuation, remove words containing numbers and other unwanted substrings."""
@@ -157,15 +169,3 @@ class PDFCorpus:
         text = text.lower()
 
         return text
-
-    def get_corpus_df(self):
-        return self.corpus_df.copy()
-
-    def get_sentences_df(self):
-        return self.sentences_df.copy()
-
-    def get_paragraphs_df(self):
-        return self.paragraphs_df.copy()
-
-    def get_docs_df(self):
-        return self.docs_df.copy()
