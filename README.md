@@ -1,5 +1,6 @@
 # To do
 
+- add pdf and related functions are too slow we should skip some steps or speed them up
 - set paragraph min-max character limits = if it is less than min then add next then check answers
 - preprocessing .replace('\n', '').replace('\xa0', ' ') and similar
 - will fine tuning on the last layer depends on our NER = not really important
