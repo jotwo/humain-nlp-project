@@ -108,7 +108,7 @@ class PDFCorpus:
                             ]
                             token_id += 1
 
-                    sentences_dict[sentence_id] = [sentence.text]
+                    sentences_dict[sentence_id] = [cleaned_sentence]
 
                     sentence_id += 1
 
