@@ -3,7 +3,6 @@ import re
 import datetime as dt
 from io import StringIO
 
-
 import pandas as pd
 import spacy
 
@@ -16,18 +15,18 @@ from pdfminer.pdfpage import PDFPage
 class PDFCorpus:
     def __init__(self):
 
-        self.nlp = spacy.load('en_core_web_sm')
+        self.nlp = spacy.load("en_core_web_sm")
 
-        self.docs_df = pd.DataFrame(columns=['date', 'name'])
-        self.docs_df.rename_axis('doc_id', axis='index', inplace=True)
-        self.paragraphs_df = pd.DataFrame(columns=['doc_id', 'paragraph'])
-        self.paragraphs_df.rename_axis('paragraph_id', axis='index', inplace=True)
-        self.sentences_df = pd.DataFrame(columns=['doc_id', 'paragraph_id', 'sentence'])
-        self.sentences_df.rename_axis('sentence_id', axis='index', inplace=True)
+        self.docs_df = pd.DataFrame(columns=["date", "name"])
+        self.docs_df.rename_axis("doc_id", axis="index", inplace=True)
+        self.paragraphs_df = pd.DataFrame(columns=["doc_id", "paragraph"])
+        self.paragraphs_df.rename_axis("paragraph_id", axis="index", inplace=True)
+        self.sentences_df = pd.DataFrame(columns=["doc_id", "paragraph_id", "sentence"])
+        self.sentences_df.rename_axis("sentence_id", axis="index", inplace=True)
         self.tokens_df = pd.DataFrame(
-            columns=['doc_id', 'paragraph_id', 'sentence_id', 'token']
+            columns=["doc_id", "paragraph_id", "sentence_id", "token"]
         )
-        self.tokens_df.rename_axis('token_id', axis='index', inplace=True)
+        self.tokens_df.rename_axis("token_id", axis="index", inplace=True)
 
     def get_tokens_df(self):
         return self.tokens_df.copy()
@@ -43,7 +42,7 @@ class PDFCorpus:
 
     def add_multiple_pdfs(self, pdfs_dir_path):
         # we only extract pdf files from this directory
-        pdf_names = [r for r in os.listdir(pdfs_dir_path) if r.endswith('.pdf')]
+        pdf_names = [r for r in os.listdir(pdfs_dir_path) if r.endswith(".pdf")]
         for pdf_name in pdf_names:
             self.add_pdf(os.path.join(pdfs_dir_path, pdf_name))
 
@@ -55,8 +54,10 @@ class PDFCorpus:
 
         today_date = pd.to_datetime(dt.date.today())
 
-        self.docs_df = self.docs_df.append({'date': today_date, 'name': pdf_name}, ignore_index=True)
-        self.docs_df.rename_axis('doc_id', axis='index', inplace=True)
+        self.docs_df = self.docs_df.append(
+            {"date": today_date, "name": pdf_name}, ignore_index=True
+        )
+        self.docs_df.rename_axis("doc_id", axis="index", inplace=True)
 
         rsrcmgr = PDFResourceManager()
 
@@ -66,7 +67,7 @@ class PDFCorpus:
 
         paragraphs_list = []
 
-        with open(pdf_filepath, 'rb') as document:
+        with open(pdf_filepath, "rb") as document:
             for page in PDFPage.get_pages(document):
                 interpreter.process_page(page)
                 layout = device.get_result()
@@ -75,7 +76,7 @@ class PDFCorpus:
                         paragraphs_list.append(element.get_text())
 
         new_doc_id = len(self.docs_df) - 1
-        
+
         self._add_to_tables(new_doc_id, paragraphs_list)
 
     def _add_to_tables(self, doc_id, paragraphs_list):
@@ -86,8 +87,8 @@ class PDFCorpus:
             token_id = 0
         else:
             last_corpus_entry = self.tokens_df.iloc[-1]
-            paragraph_id = last_corpus_entry['paragraph_id'] + 1
-            sentence_id = last_corpus_entry['sentence_id'] + 1
+            paragraph_id = last_corpus_entry["paragraph_id"] + 1
+            sentence_id = last_corpus_entry["sentence_id"] + 1
             token_id = last_corpus_entry.name + 1
 
         corpus_dict = {}
@@ -117,7 +118,7 @@ class PDFCorpus:
                         # we are sure that the token is at least composed of one meaningful character at this point
                         if len(token.text.strip()) != 0:
                             print(
-                                f'doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}'
+                                f"doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}"
                             )
                             corpus_dict[token_id] = [
                                 doc_id,
@@ -127,7 +128,11 @@ class PDFCorpus:
                             ]
                             token_id += 1
 
-                    sentences_dict[sentence_id] = [doc_id, paragraph_id, cleaned_sentence]
+                    sentences_dict[sentence_id] = [
+                        doc_id,
+                        paragraph_id,
+                        cleaned_sentence,
+                    ]
                     sentence_id += 1
 
             # check if the paragraph wasn't composed only of discarded sentences
@@ -139,21 +144,27 @@ class PDFCorpus:
         self.tokens_df = self.tokens_df.append(
             pd.DataFrame.from_dict(
                 corpus_dict,
-                orient='index',
-                columns=['doc_id', 'paragraph_id', 'sentence_id', 'token'],
+                orient="index",
+                columns=["doc_id", "paragraph_id", "sentence_id", "token"],
             )
         )
-        self.tokens_df.rename_axis('token_id', axis='index', inplace=True)
+        self.tokens_df.rename_axis("token_id", axis="index", inplace=True)
 
         self.sentences_df = self.sentences_df.append(
-            pd.DataFrame.from_dict(sentences_dict, orient='index', columns=['doc_id', 'paragraph_id', 'sentence'])
+            pd.DataFrame.from_dict(
+                sentences_dict,
+                orient="index",
+                columns=["doc_id", "paragraph_id", "sentence"],
+            )
         )
-        self.sentences_df.rename_axis('sentence_id', axis='index', inplace=True)
+        self.sentences_df.rename_axis("sentence_id", axis="index", inplace=True)
 
         self.paragraphs_df = self.paragraphs_df.append(
-            pd.DataFrame.from_dict(paragraphs_dict, orient='index', columns=['doc_id', 'paragraph'])
+            pd.DataFrame.from_dict(
+                paragraphs_dict, orient="index", columns=["doc_id", "paragraph"]
+            )
         )
-        self.paragraphs_df.rename_axis('paragraph_id', axis='index', inplace=True)
+        self.paragraphs_df.rename_axis("paragraph_id", axis="index", inplace=True)
 
     def __clean_content(self, text):
         """Make text lowercase, remove text in square brackets, remove punctuation, remove words containing numbers and other unwanted substrings."""
