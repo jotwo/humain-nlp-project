@@ -28,16 +28,16 @@ class PDFCorpus:
         self.tokens_df.rename_axis("token_id", axis="index", inplace=True)
 
     def get_tokens_df(self):
-        return self.tokens_df.copy()
+        return self.tokens_df
 
     def get_sentences_df(self):
-        return self.sentences_df.copy()
+        return self.sentences_df
 
     def get_paragraphs_df(self):
-        return self.paragraphs_df.copy()
+        return self.paragraphs_df
 
     def get_docs_df(self):
-        return self.docs_df.copy()
+        return self.docs_df
 
     def add_multiple_pdfs(self, pdfs_dir_path):
         # we only extract pdf files from this directory
@@ -116,9 +116,9 @@ class PDFCorpus:
                         # we remove potential whitespaces around the token
                         # we are sure that the token is at least composed of one meaningful character at this point
                         if len(token.text.strip()) != 0:
-                            print(
-                                f"doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}"
-                            )
+                            # print(
+                            #     f"doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}"
+                            # )
                             corpus_dict[token_id] = [
                                 doc_id,
                                 paragraph_id,
