@@ -1,18 +1,15 @@
 import os
-from flask import Flask, flash, request, redirect, render_template, session
-from werkzeug.utils import secure_filename
-import re
+import pickle
+
 import pandas as pd
+
 import spacy
 from spacy import displacy
 
-nlp = spacy.load('en_core_web_sm')
-from src.preprocessing import PDFCorpus
-import pickle
+from flask import Flask, request, session, flash, redirect, render_template
+from werkzeug.utils import secure_filename
 
-pdf_corpus = PDFCorpus()
-
-# para_model=pickle.load('E:/BeCodeProjects/HumAIn_Project/src/pickle/paragraphs.pkl')
+from preprocessing import PDFCorpus
 
 
 app = Flask(__name__)
@@ -20,26 +17,25 @@ app = Flask(__name__)
 app.secret_key = 'secret key'  # for encrypting the session
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-path = os.getcwd()
-UPLOAD_FOLDER = os.path.join(path, '../uploads')
+ALLOWED_EXTENSIONS = {"pdf"}
+
+UPLOAD_FOLDER = "../uploads"
+
 if not os.path.isdir(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'csv', 'json'])
-# seting the maximum column width to display all columns
-pd.set_option('display.max_colwidth', -1)
-
-
 def allowed_file(filename):
-    # if filename.rsplit('.', 1)[1].lower() == 'json':
-    # parse_json_file(filename)
-    # if filename.rsplit('.', 1)[1].lower() == 'csv':
-    # parse_csv_file(filename)
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# seting the maximum column width to display all columns
+pd.set_option('display.max_colwidth', None)
+
+pdf_corpus = PDFCorpus()
+
+nlp = pdf_corpus.nlp
 
 @app.route('/')
 def upload_form():
@@ -74,7 +70,7 @@ def upload_file():
                 detailed_df['paragraph'] = tokens_df['paragraph_id'].apply(lambda x: paragraphs_df.loc[x, 'paragraph'])
                 detailed_df['sentence'] = tokens_df['sentence_id'].apply(lambda x: sentences_df.loc[x, 'sentence'])
 
-                usecase_df = pd.read_csv('E:/BeCodeProjects/HumAIn_Project/src/most_likely_usecase_per_paragraph.csv')
+                usecase_df = pd.read_csv('./assets/most_likely_usecase_per_paragraph.csv')
 
                 detailed_df['industry'] = usecase_df['industry']  # .apply(lambda x: usecase_df.loc[x, 'industry'])
                 detailed_df['usecase'] = usecase_df['usecase']  # .apply(lambda x: usecase_df.loc[x, 'usecase'])
@@ -134,5 +130,5 @@ def text_processing():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host='0.0.0.0', port=port, threaded=True)
+    app.run(host='0.0.0.0', port=port, threaded=True, debug=False)
 
