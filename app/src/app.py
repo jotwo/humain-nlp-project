@@ -132,5 +132,7 @@ def text_processing():
     return render_template("text_extractor.html", results=results, num_of_results=num_of_results)
 
 
-if __name__ == '__main__':
-    app.run(debug=True, threaded=True, port=5000)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host='0.0.0.0', port=port, threaded=True)
+
