@@ -60,10 +60,20 @@ def upload_file():
                 sentences_df = pdf_corpus.get_sentences_df().copy()
                 tokens_df = pdf_corpus.get_tokens_df().copy()
 
-                print(docs_df)
-                # print(paragraphs_df)
-                # print(sentences_df)
-                # print(tokens_df)
+                # print(docs_df)
+                # # print(paragraphs_df)
+                # # print(sentences_df)
+                # # print(tokens_df)
+
+                new_df = tokens_df[['token']]
+                new_df['doc_name'] = tokens_df['doc_id'].apply(lambda x: docs_df.loc[x, 'name'])
+                new_df['paragraph'] = tokens_df['paragraph_id'].apply(lambda x: paragraphs_df.loc[x, 'paragraph'])
+                new_df['sentence'] = tokens_df['sentence_id'].apply(lambda x: sentences_df.loc[x, 'sentence'])
+                # reordering the columns
+                new_df = new_df[['doc_name', 'paragraph', 'sentence', 'token']]
+
+                print(new_df)
+                print(tokens_df)
 
                 flash("File(s) successfully uploaded")
 
@@ -120,4 +130,5 @@ def text_processing():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, threaded=True, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host='0.0.0.0', port=port, threaded=True)
