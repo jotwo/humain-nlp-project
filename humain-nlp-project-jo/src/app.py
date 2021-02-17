@@ -13,9 +13,6 @@ import pickle
 
 pdf_corpus = PDFCorpus()
 
-# para_model=pickle.load('E:/BeCodeProjects/HumAIn_Project/src/pickle/paragraphs.pkl')
-
-
 app = Flask(__name__)
 
 app.secret_key = 'secret key'  # for encrypting the session
@@ -34,11 +31,7 @@ pd.set_option('display.max_colwidth', -1)
 
 
 def allowed_file(filename):
-    # if filename.rsplit('.', 1)[1].lower() == 'json':
-    # parse_json_file(filename)
-    # if filename.rsplit('.', 1)[1].lower() == 'csv':
-    # parse_csv_file(filename)
-
+   
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
