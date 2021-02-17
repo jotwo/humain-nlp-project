@@ -2,13 +2,22 @@ import os
 import pickle
 import pandas as pd
 
+import sys
+import threading
+
 from flask import Flask, flash, request, redirect, render_template
 from werkzeug.utils import secure_filename
 
 from preprocessing import PDFCorpus
+from usecase_indicator import usecase_indicator
+from download_model import download_model
 
 import spacy
 from spacy import displacy
+
+# support for downloading the model in the background
+# while preprocessing
+threading.Thread(target=download_model).start()
 
 app = Flask(__name__)
 
@@ -55,20 +64,36 @@ def upload_file():
 
                 pdf_corpus.add_pdf(os.path.join(UPLOAD_FOLDER, filename))
 
-                docs_df = pdf_corpus.get_docs_df().copy()
-                paragraphs_df = pdf_corpus.get_paragraphs_df().copy()
-                sentences_df = pdf_corpus.get_sentences_df().copy()
-                tokens_df = pdf_corpus.get_tokens_df().copy()
+                # # no need to create copies of the dataframes I think
+                # docs_df = pdf_corpus.get_docs_df().copy()
+                # paragraphs_df = pdf_corpus.get_paragraphs_df().copy()
+                # sentences_df = pdf_corpus.get_sentences_df().copy()
+                # tokens_df = pdf_corpus.get_tokens_df().copy()
 
-                print(docs_df)
+                print(pdf_corpus.get_docs_df())
+                # flushing the output buffer makes the print message available
+                # on heroku log
+                sys.stdout.flush()
                 # print(paragraphs_df)
                 # print(sentences_df)
                 # print(tokens_df)
 
-                flash("File(s) successfully uploaded")
-
             else:
-                flash("Upload PDF file(s)")
+                flash("Only PDF file(s) supported")
+                break
+
+        # when preprocessing is successful
+        else:
+            flash("File(s) successfully processed")
+
+        # after all files are added to the corpus we can start postprocessing
+        # first we only select paragraphs with usecase sentences
+        usecase_indication = usecase_indicator(pdf_corpus.get_sentences_df(),
+                                                'usecase_indicator.h5',
+                                                quality = 1.4)
+
+        # then we apply QnA to the selected paragraphs
+        
 
         return redirect("/")
 
@@ -118,6 +143,12 @@ def text_processing():
         "text_extractor.html", results=results, num_of_results=num_of_results
     )
 
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, threaded=True, debug=True)
+    # You want to put the value of the env variable PORT if it exist
+    # (some services only open specifiques ports)
+    port = int(os.environ.get('PORT', 5000))
+    # Threaded option to enable multiple instances for
+    # multiple user access support
+    # You will also define the host to "0.0.0.0" because localhost
+    # will only be reachable from inside de server.
+    app.run(host="0.0.0.0", threaded=True, debug=True, port=port)
