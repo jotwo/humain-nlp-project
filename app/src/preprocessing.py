@@ -104,7 +104,7 @@ class PDFCorpus:
 
             for sentence in paragraph_doc.sents:
 
-                cleaned_sentence = self.__clean_content(sentence.text)
+                cleaned_sentence = self.__clean_content(sentence.text).strip()
 
                 # test if the cleaned sentence is not composed of whitespaces only
                 # in that case we discard this meaningless sentence
