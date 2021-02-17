@@ -104,7 +104,7 @@ class PDFCorpus:
 
             for sentence in paragraph_doc.sents:
 
-                cleaned_sentence = self.__clean_content(sentence.text)
+                cleaned_sentence = self.__clean_content(sentence.text).strip()
 
                 # test if the cleaned sentence is not composed of whitespaces only
                 # in that case we discard this meaningless sentence
@@ -116,9 +116,9 @@ class PDFCorpus:
                         # we remove potential whitespaces around the token
                         # we are sure that the token is at least composed of one meaningful character at this point
                         if len(token.text.strip()) != 0:
-                            # print(
-                            #     f"doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}"
-                            # )
+                            print(
+                                f"doc_id: {doc_id},\tparagraph_id: {paragraph_id},\tsentence_id: {sentence_id},\t\ttoken_id: {token_id},\t\ttoken: {token.text}"
+                            )
                             corpus_dict[token_id] = [
                                 doc_id,
                                 paragraph_id,
