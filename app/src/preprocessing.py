@@ -42,6 +42,7 @@ class PDFCorpus:
     def add_multiple_pdfs(self, pdfs_dir_path):
         # we only extract pdf files from this directory
         pdf_names = [r for r in os.listdir(pdfs_dir_path) if r.endswith(".pdf")]
+        print(pdf_names)
         for pdf_name in pdf_names:
             self.add_pdf(os.path.join(pdfs_dir_path, pdf_name))
 
