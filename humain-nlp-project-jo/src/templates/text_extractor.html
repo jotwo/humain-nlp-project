@@ -48,17 +48,19 @@
             <br/>
             <select class="form-control" name="taskoption">
 			  <option selected>Select Function</option>
-			  <option value="Marketing">Marketing</option>
-			  <option value="Sales">Sales</option>
-			  <option value="IT">IT</option>
-                <option value="Customer Service">Customer Service</option>
-                 <option value="Data">Data</option>
-                <option value="Operations">Operations</option>
-                <option value="Analytics">Analytics</option>
-                <option value="Fintech">Fintech</option>
-                <option value="HR">HR</option>
-                <option value="Healthtech">Healthtech</option>
-                <option value="Self driving cars">Self driving cars</option>
+			  <option value="exhibit">exhibit</option>
+			  <option value="data richness">data richness</option>
+			  <option value="predictive analytics">predictive analytics</option>
+
+
+			</select>
+			<br/>
+             <select class="form-control" name="taskoption2">
+			  <option selected>Select Industry</option>
+			  <option value="exhibit">exhibit</option>
+			  <option value="data richness">data richness</option>
+			  <option value="productivity and growth">productivity and growth</option>
+
 
 			</select>
 			<br/>
@@ -74,7 +76,7 @@
         <p class="alert-heading">Result</p>
         <p>Number of Records:{{num_of_results}}</p>
         <ul>{% for i in results %}
-        	<li>{{i}}</li>
+        	<li><a href='/files'>{{i}}</a></li>
         	{%endfor %}
     	</ul>
     	</div>
