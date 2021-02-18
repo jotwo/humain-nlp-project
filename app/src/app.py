@@ -78,8 +78,6 @@ def upload_file():
 
                 new_uploads += 1
 
-                flash(f'Preprocessed {file.filename}')
-
                 # # no need to create copies of the dataframes I think
                 # docs_df = pdf_corpus.get_docs_df().copy()
                 # paragraphs_df = pdf_corpus.get_paragraphs_df().copy()
@@ -118,9 +116,10 @@ def upload_file():
             else:
                 break
 
-        flash(f'BERT Sequence classification completed')
-
         # then we apply QnA to the selected paragraphs
+
+        # in the end we flash the result is ready and show the button
+        flash(f'Text interpretation finished')
 
         return redirect("/")
 
