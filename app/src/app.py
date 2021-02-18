@@ -1,4 +1,6 @@
 import os
+import sys
+import threading
 import pandas as pd
 
 import sys
@@ -6,13 +8,12 @@ import threading
 
 from flask import Flask, flash, request, redirect, render_template
 
-# from flask import Flask, request, session, flash, redirect, render_template
 from werkzeug.utils import secure_filename
 
 from preprocessing import PDFCorpus
 from usecase_indicator import usecase_indicator
 from download_model import download_model
-
+from qna import qa
 
 # support for downloading the model in the background
 # while preprocessing
@@ -52,9 +53,12 @@ def upload_form():
 @app.route("/", methods=["POST"])
 def upload_file():
 
-    # the postprocessed result dataframe from Orahn will be available
-    # to other routes
-    global results_df
+    # The postprocessing result will be available in other routes
+    global detailed_df
+
+    # heroku might delete one of the model files while our dyno is running
+    # download it again if needed when executing an upload
+    threading.Thread(target=download_model).start()
 
     if request.method == "POST":
         if "files[]" not in request.files:
@@ -78,22 +82,13 @@ def upload_file():
 
                 new_uploads += 1
 
-                # # no need to create copies of the dataframes I think
-                # docs_df = pdf_corpus.get_docs_df().copy()
-                # paragraphs_df = pdf_corpus.get_paragraphs_df().copy()
-                # sentences_df = pdf_corpus.get_sentences_df().copy()
-                # tokens_df = pdf_corpus.get_tokens_df().copy()
-
                 print(pdf_corpus.get_docs_df().iloc[-1].to_string())
                 # flushing the output buffer makes the print message available
                 # on heroku log
                 sys.stdout.flush()
-                # print(paragraphs_df)
-                # print(sentences_df)
-                # print(tokens_df)
 
             else:
-                flash("Only PDF file(s) supported")
+                flash("Only PDF file(s) are supported")
                 break
 
         # after all files are added to the corpus we can start postprocessing
@@ -117,6 +112,8 @@ def upload_file():
                 break
 
         # then we apply QnA to the selected paragraphs
+        detailed_df = qa(usecase_indication)
+        print('QnA done')
 
         # in the end we flash the result is ready and show the button
         flash(f'Text interpretation finished')
@@ -128,9 +125,9 @@ def upload_file():
 def text():
     if request.method == "POST":
         global detailed_df
-        global paragraphs_df
+        # global paragraphs_df
         global text
-        text = paragraphs_df["paragraph"]
+        text = detailed_df["paragraph"]
 
         return render_template("text_extractor.html", text=text)
 
@@ -143,7 +140,6 @@ def text_processing():
 
         choice1 = request.form.get("taskoption")  # Function
         choice2 = request.form.get("taskoption2")  # Industry
-        # print(detailed_df)
 
         exhibit_ind = detailed_df.loc[detailed_df["industry"] == "exhibit"]["usecase"]
         exhibit_fn = detailed_df.loc[detailed_df["function"] == "exhibit"]["usecase"]
