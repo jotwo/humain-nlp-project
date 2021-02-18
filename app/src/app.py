@@ -142,34 +142,38 @@ def text_processing():
         choice1 = request.form.get("taskoption")  # Function
         choice2 = request.form.get("taskoption2")  # Industry
 
-        exhibit_ind = detailed_df.loc[detailed_df["industry"] == "exhibit"]["usecase"]
-        exhibit_fn = detailed_df.loc[detailed_df["function"] == "exhibit"]["usecase"]
-        dr_ind = detailed_df.loc[detailed_df["industry"] == "data richness"]["usecase"]
-        dr_fn = detailed_df.loc[detailed_df["function"] == "data richness"]["usecase"]
-        pa_ind = detailed_df.loc[detailed_df["industry"] == "predictive analytics"][
-            "usecase"
-        ]
-        pa_fn = detailed_df.loc[detailed_df["function"] == "productivity and growth"][
-            "usecase"
-        ]
-        if choice1 == "exhibit" or choice2 == "exhibit":
-            results = exhibit_ind
-            text = detailed_df["paragraph"]
+        c_ind = detailed_df.loc[detailed_df["industry"] == "communications"]["usecase"]
+        c_fn = detailed_df.loc[detailed_df["function"] == "communications"]["usecase"]
+        dr_ind = detailed_df.loc[detailed_df["industry"] == "make every year fail to deliver the best price"]["usecase"]
+        dr_fn = detailed_df.loc[detailed_df["function"] == "make every year fail to deliver the best price"]["usecase"]
+        pa_ind = detailed_df.loc[detailed_df["industry"] == "companies"]["usecase"]
+        pa_fn = detailed_df.loc[detailed_df["function"] == "actively manage performance"]["usecase"]
+        sf_ind = detailed_df.loc[detailed_df["industry"] == "sales force with useful targets"]["usecase"]
+        sf_fn = detailed_df.loc[detailed_df["function"] == "support the sales force with useful targets"]["usecase"]
 
+        if choice1 == "communications" or choice2 == "communications":
+            results = c_ind
+            text = detailed_df.loc[detailed_df["industry"] == "communications"]["paragraph"].to_string(index=False)
             num_of_results = len(results)
-        if choice1 == "data richness" or choice2 == "data richness":
+
+        if choice1 == "make every year fail to deliver the best price" or choice2 == "make every year fail to deliver the best price":
             results = dr_ind
-            text = detailed_df["paragraph"]
+            text = detailed_df.loc[detailed_df["industry"] == "make every year fail to deliver the best price"][
+                "paragraph"].to_string(index=False)
             num_of_results = len(results)
-        if choice1 == "predictive analytics" or choice2 == "productivity and growth":
+
+        if choice1 == "actively manage performance" or choice2 == "companies":
             results = pa_ind
-            text = detailed_df["paragraph"]
+            text = detailed_df.loc[detailed_df["industry"] == "companies"]["paragraph"].to_string(index=False)
             num_of_results = len(results)
 
-    return render_template(
-        "text_extractor.html", results=results, num_of_results=num_of_results
-    )
+        if choice1 == "support the sales force with useful targets" or choice2 == "sales force with useful targets":
+            results = sf_ind
+            text = detailed_df.loc[detailed_df["industry"] == "sales force with useful targets"]["paragraph"].to_string(
+                index=False)
+            num_of_results = len(results)
 
+    return render_template("text_extractor.html", results=results, num_of_results=num_of_results)
 
 @app.route("/files")
 def display_files():
