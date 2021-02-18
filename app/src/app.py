@@ -1,10 +1,17 @@
 import os
+import sys
+import threading
 import pandas as pd
-from flask import Flask, request, session, flash, redirect, render_template
+from flask import Flask, request, flash, redirect, render_template
 from werkzeug.utils import secure_filename
 
 from preprocessing import PDFCorpus
+from usecase_indicator import usecase_indicator
+from download_model import download_model
 
+# support for downloading the model in the background
+# while preprocessing
+threading.Thread(target=download_model).start()
 
 app = Flask(__name__)
 
@@ -39,6 +46,11 @@ def upload_form():
 
 @app.route("/", methods=["POST"])
 def upload_file():
+
+    # the postprocessed result dataframe from Orahn will be available
+    # to other routes
+    global results_df
+
     if request.method == "POST":
         if "files[]" not in request.files:
             flash("no file part")
@@ -46,16 +58,33 @@ def upload_file():
 
         files = request.files.getlist("files[]")
 
+        # we only want to interpret the newly uploaded files
+        # initiate the counter
+        new_uploads = 0
+
         for file in files:
 
             if file and allowed_file(file.filename):
 
                 filename = secure_filename(file.filename)
+
+                #<to be deleted maybe
                 global detailed_df
-                global paragraphs_df
+                global paragraphs_df                
+                #to be deleted maybe>
+
                 file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
                 pdf_corpus.add_pdf(os.path.join(UPLOAD_FOLDER, filename))
 
+                new_uploads += 1
+
+                print(pdf_corpus.get_docs_df().iloc[-1].to_string())
+                # flushing the output buffer makes the print message available
+                # on heroku log
+                sys.stdout.flush()
+
+                
+                #<to be deleted maybe
                 docs_df = pdf_corpus.get_docs_df().copy()
 
                 paragraphs_df = pdf_corpus.get_paragraphs_df().copy()
@@ -96,12 +125,39 @@ def upload_file():
                         "industry",
                         "usecase",
                     ]
-                ]
+                ]                
+                #to be deleted maybe>
+
 
                 flash("File(s) successfully uploaded")
             else:
+                flash("Only PDF file(s) are supported")
+                break
 
-                flash("Upload file(s) in pdf format")
+        # after all files are added to the corpus we can start postprocessing
+        # first we only select paragraphs with usecase sentences in newly
+        # uploaded files
+        usecase_indication = usecase_indicator(corpus = pdf_corpus,
+                                                n_last = new_uploads,
+                                                model = 'usecase_indicator.h5',
+                                                quality = 1.4)
+        
+        # Show the top 10 results of the classification in the console
+        print(f'{len(usecase_indication)} usecases found')
+        sys.stdout.flush()
+        counter = 0
+        for i, row in usecase_indication.iterrows():
+            if counter < 10:
+                print(row['sentence'])
+                sys.stdout.flush()
+                counter += 1
+            else:
+                break
+
+        # then we apply QnA to the selected paragraphs
+
+        # in the end we flash the result is ready and show the button
+        flash(f'Text interpretation finished')
 
         return redirect("/")
 
