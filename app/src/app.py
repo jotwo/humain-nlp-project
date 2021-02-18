@@ -48,7 +48,7 @@ def upload_form():
 @app.route("/", methods=["POST"])
 def upload_file():
 
-    # the postprocessed result dataframe from Orahn will be available
+    # the postprocessed result dataframe from Orhan will be available
     # to other routes
     global results_df
 
@@ -70,10 +70,6 @@ def upload_file():
                 filename = secure_filename(file.filename)
                 global detailed_df
 
-                # #<to be deleted maybe
-                # global paragraphs_df                
-                # #to be deleted maybe>
-
                 file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
                 pdf_corpus.add_pdf(os.path.join(UPLOAD_FOLDER, filename))
 
@@ -83,51 +79,6 @@ def upload_file():
                 # flushing the output buffer makes the print message available
                 # on heroku log
                 sys.stdout.flush()
-
-                
-                # #<to be deleted maybe
-                # docs_df = pdf_corpus.get_docs_df().copy()
-
-                # paragraphs_df = pdf_corpus.get_paragraphs_df().copy()
-                # sentences_df = pdf_corpus.get_sentences_df().copy()
-                # tokens_df = pdf_corpus.get_tokens_df().copy()
-
-                # detailed_df = tokens_df[["token"]].copy()
-                # detailed_df["doc_name"] = tokens_df["doc_id"].apply(
-                #     lambda x: docs_df.loc[x, "name"]
-                # )
-                # detailed_df["paragraph"] = tokens_df["paragraph_id"].apply(
-                #     lambda x: paragraphs_df.loc[x, "paragraph"]
-                # )
-                # detailed_df["sentence"] = tokens_df["sentence_id"].apply(
-                #     lambda x: sentences_df.loc[x, "sentence"]
-                # )
-                # detailed_df["paragraph_id"] = tokens_df["paragraph_id"].apply(
-                #     lambda x: tokens_df.loc[x, "paragraph_id"]
-                # )
-
-                # usecase_df = pd.read_csv(
-                #     "./assets/most_likely_usecase_per_paragraph.csv"
-                # )
-                # detailed_df["function"] = usecase_df["function"]
-                # detailed_df["industry"] = usecase_df[
-                #     "industry"
-                # ]  # .apply(lambda x: usecase_df.loc[x, 'industry'])
-                # detailed_df["usecase"] = usecase_df[
-                #     "usecase"
-                # ]  # .apply(lambda x: usecase_df.loc[x, 'usecase'])
-                # detailed_df = detailed_df[
-                #     [
-                #         "doc_name",
-                #         "paragraph_id",
-                #         "paragraph",
-                #         "sentence",
-                #         "function",
-                #         "industry",
-                #         "usecase",
-                #     ]
-                # ]                
-                # #to be deleted maybe>
 
 
                 flash("File(s) successfully uploaded")

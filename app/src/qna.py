@@ -1,13 +1,13 @@
 import torch 
-from transformers import BertForQuestionAnswering,BertTokenizer
+from transformers import BertForQuestionAnswering, BertTokenizer
 import pandas as pd
 
 def qa(usecase_indication):
     # there is 2 options 1-load Bert from online  2-load-save then load from local folder 
     # I commented following 2 lines
     # model = BertForQuestionAnswering.from_pretrained  ('bert-large-uncased-whole-word-masking-finetuned-squad') # 1-load Bert from online
-    # model.save_pretrained("./BertLSquad/") # to save the model for regualar local use 
-    model = BertForQuestionAnswering.from_pretrained('./BertLSquad/') #2- open saved model 
+    # model.save_pretrained("./BertLSquad") # to save the model for regualar local use 
+    model = BertForQuestionAnswering.from_pretrained('./BertLSquad') #2- open saved model 
     tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
     df1 = pd.DataFrame(columns=['industry','function', 'usecase', 'paragraph_id'])
 
