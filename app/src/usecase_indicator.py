@@ -5,18 +5,26 @@ from transformers import TFBertModel
 import numpy as np
 import pandas as pd
 
-def usecase_indicator(sentences_df, model: str, quality: float = 3.5):
-    """Calculates a usecase score for each sentence in pdf_corpus.get_sentences_df()
+def usecase_indicator(corpus, n_last, model: str, quality: float = 3.5):
+    """Calculates a usecase score for each new sentence in pdf_corpus.get_sentences_df()
     and filters the values scoring higher than the required quality.
     Then, only the sentence with the max score in the paragraph is returned.
-    Output is a dataframe.
+    Output is a dataframe including full paragraph text.
+    ::corpus:: pdf_corpus object
+    ::n_last:: only the last n docs of the corpus will be postprocessed
     ::model:: model.h5 path
     ::quality:: higher values produce less results (max ~1.6)"""
     
     # predict based on the pretrained bert tokenizer and our finetuned classifier
     config = BertConfig.from_pretrained('bert-base-uncased')
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', config = config)
-    encoded_data = tokenizer(list(sentences_df.sentence),
+    
+    new_doc_ids = corpus.get_docs_df().index[n_last*-1:]
+    new_sentences = corpus.get_sentences_df().loc\
+                            [corpus.get_sentences_df().doc_id\
+                                  .isin(new_doc_ids)]
+
+    encoded_data = tokenizer(list(new_sentences.sentence),
                            max_length = 40,
                            truncation = True,
                            add_special_tokens = True,
@@ -30,14 +38,14 @@ def usecase_indicator(sentences_df, model: str, quality: float = 3.5):
     y = model.predict(x={'input_ids': encoded_data['input_ids'],
                        'attention_mask': encoded_data['attention_mask']})
     
-    sentences_df.loc[:, 'usecase_score'] = y['usecase'].ravel()
-    sentences_df_filtered = sentences_df.loc[sentences_df['usecase_score'] > 1.4]
+    new_sentences.loc[:, 'usecase_score'] = y['usecase'].ravel()
+    sentences_df_filtered = new_sentences.loc[new_sentences['usecase_score'] > 1.4]
     
     idx = sentences_df_filtered.groupby(['paragraph_id'])['usecase_score'].\
                   transform(max) == sentences_df_filtered['usecase_score']
 
     # join full paragraph text
-    result = sentences_df_filtered[idx].merge(pdf_corpus.get_paragraphs_df()['paragraph'],
+    result = sentences_df_filtered[idx].merge(corpus.get_paragraphs_df()['paragraph'],
                                               how='inner',
                                               on='paragraph_id',
                                               copy=False,
