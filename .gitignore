@@ -1,3 +1,5 @@
+# Bert pre trained model 1.3GB
+app/src/BertLSquad/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

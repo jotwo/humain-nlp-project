@@ -1,19 +1,18 @@
 import os
-import pickle
 import pandas as pd
 
 import sys
 import threading
 
 from flask import Flask, flash, request, redirect, render_template
+
+# from flask import Flask, request, session, flash, redirect, render_template
 from werkzeug.utils import secure_filename
 
 from preprocessing import PDFCorpus
 from usecase_indicator import usecase_indicator
 from download_model import download_model
 
-import spacy
-from spacy import displacy
 
 # support for downloading the model in the background
 # while preprocessing
@@ -33,7 +32,12 @@ if not os.path.isdir(UPLOAD_FOLDER):
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
+# seting the maximum column width to display all columns
+pd.set_option("display.max_colwidth", None)
+
 pdf_corpus = PDFCorpus()
+
+nlp = pdf_corpus.nlp
 
 
 def allowed_file(filename):
@@ -47,6 +51,11 @@ def upload_form():
 
 @app.route("/", methods=["POST"])
 def upload_file():
+
+    # the postprocessed result dataframe from Orahn will be available
+    # to other routes
+    global results_df
+
     if request.method == "POST":
         if "files[]" not in request.files:
             flash("no file part")
@@ -65,7 +74,6 @@ def upload_file():
                 filename = secure_filename(file.filename)
 
                 file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-
                 pdf_corpus.add_pdf(os.path.join(UPLOAD_FOLDER, filename))
 
                 new_uploads += 1
@@ -78,7 +86,7 @@ def upload_file():
                 # sentences_df = pdf_corpus.get_sentences_df().copy()
                 # tokens_df = pdf_corpus.get_tokens_df().copy()
 
-                print(pdf_corpus.get_docs_df().iloc[-1].to_string(index=True))
+                print(pdf_corpus.get_docs_df().iloc[-1].to_string())
                 # flushing the output buffer makes the print message available
                 # on heroku log
                 sys.stdout.flush()
@@ -93,74 +101,88 @@ def upload_file():
         # after all files are added to the corpus we can start postprocessing
         # first we only select paragraphs with usecase sentences in newly
         # uploaded files
-        new_doc_ids = pdf_corpus.get_docs_df().index[new_uploads*-1:]
-        new_doc_sentences_df = pdf_corpus.get_sentences_df().loc\
-                                [pdf_corpus.get_sentences_df().doc_id\
-                                    .isin(new_doc_ids)]
-        usecase_indication = usecase_indicator(new_doc_sentences_df,
-                                                'usecase_indicator.h5',
+        usecase_indication = usecase_indicator(corpus = pdf_corpus,
+                                                n_last = new_uploads,
+                                                model = 'usecase_indicator.h5',
                                                 quality = 1.4)
+        
+        # Show the top 10 results of the classification in the console
+        print(f'{len(usecase_indication)} usecases found')
+        sys.stdout.flush()
         counter = 0
         for i, row in usecase_indication.iterrows():
-            if counter < 20:
+            if counter < 10:
                 print(row['sentence'])
+                sys.stdout.flush()
                 counter += 1
             else:
                 break
-        print(len(usecase_indication))
 
         flash(f'BERT Sequence classification completed')
 
         # then we apply QnA to the selected paragraphs
-        
 
         return redirect("/")
 
 
-@app.route("/text")
+@app.route("/text", methods=["POST"])
 def text():
-    return render_template("text_extractor.html")
+    if request.method == "POST":
+        global detailed_df
+        global paragraphs_df
+        global text
+        text = paragraphs_df["paragraph"]
+
+        return render_template("text_extractor.html", text=text)
 
 
 @app.route("/process", methods=["POST"])
 def text_processing():
     if request.method == "POST":
-        # with open('E:/BeCodeProjects/HumAIn_Project/text0.txt','r',encoding="utf8") as f:
-        # return render_template("text_extractor.html",text=f.read())
-        choice = request.form.get("taskoption")
+        global detailed_df
+        global text, results, num_of_results
 
-        rawtext = request.form.get("rawtext")
+        choice1 = request.form.get("taskoption")  # Function
+        choice2 = request.form.get("taskoption2")  # Industry
+        # print(detailed_df)
 
-        print(rawtext)
-        doc = nlp(rawtext)
-        # print(doc)
-        d = []
-        for sent in doc.sents:
-            # print(ent)
-            d.append((sent.label_, sent.text))
-            df = pd.DataFrame(d, columns=("industry", "output"))
-            print(df)
-            test = df["output"]
-            print(test)
+        exhibit_ind = detailed_df.loc[detailed_df["industry"] == "exhibit"]["usecase"]
+        exhibit_fn = detailed_df.loc[detailed_df["function"] == "exhibit"]["usecase"]
+        dr_ind = detailed_df.loc[detailed_df["industry"] == "data richness"]["usecase"]
+        dr_fn = detailed_df.loc[detailed_df["function"] == "data richness"]["usecase"]
+        pa_ind = detailed_df.loc[detailed_df["industry"] == "predictive analytics"][
+            "usecase"
+        ]
+        pa_fn = detailed_df.loc[detailed_df["function"] == "productivity and growth"][
+            "usecase"
+        ]
+        if choice1 == "exhibit" or choice2 == "exhibit":
+            results = exhibit_ind
+            text = detailed_df["paragraph"]
 
-        if choice == "Marketing":
-            results = test
-            print(results)
             num_of_results = len(results)
-        """    
-        elif choice == 'Sales':
-            results = PERSON_named_entity
+        if choice1 == "data richness" or choice2 == "data richness":
+            results = dr_ind
+            text = detailed_df["paragraph"]
             num_of_results = len(results)
-        elif choice == 'IT':
-            results = GPE_named_entity
+        if choice1 == "predictive analytics" or choice2 == "productivity and growth":
+            results = pa_ind
+            text = detailed_df["paragraph"]
             num_of_results = len(results)
-        elif choice == 'Data':
-            results = MONEY_named_entity
-            num_of_results = len(results)
-        """
+
     return render_template(
         "text_extractor.html", results=results, num_of_results=num_of_results
     )
+
+@app.route("/files")
+def display_files():
+    global detailed_df
+    global text, results, num_of_results
+    text = text
+    return render_template(
+        "text_extractor.html", results=results, num_of_results=num_of_results, text=text
+    )
+
 
 if __name__ == "__main__":
     # You want to put the value of the env variable PORT if it exist

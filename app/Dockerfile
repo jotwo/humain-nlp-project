@@ -23,6 +23,6 @@ WORKDIR /
 
 # library/module imports are relative to PYTHONPATH
 # (defaults to app.py location but overwrite it with workdir? here)
-CMD export PYTHONPATH="${PYTHONPATH}:/" ; python3 app/app.py
+#CMD export PYTHONPATH="${PYTHONPATH}:/" ; python3 app/app.py
 
-# CMD python3 app/app.py
+CMD python3 app/app.py
