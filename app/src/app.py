@@ -1,7 +1,5 @@
 import os
 import pandas as pd
-import spacy
-from spacy import displacy
 from flask import Flask, request, session, flash, redirect, render_template
 from werkzeug.utils import secure_filename
 
@@ -74,6 +72,9 @@ def upload_file():
                 detailed_df["sentence"] = tokens_df["sentence_id"].apply(
                     lambda x: sentences_df.loc[x, "sentence"]
                 )
+                detailed_df["paragraph_id"] = tokens_df["paragraph_id"].apply(
+                    lambda x: tokens_df.loc[x, "paragraph_id"]
+                )
 
                 usecase_df = pd.read_csv(
                     "./assets/most_likely_usecase_per_paragraph.csv"
@@ -88,6 +89,7 @@ def upload_file():
                 detailed_df = detailed_df[
                     [
                         "doc_name",
+                        "paragraph_id",
                         "paragraph",
                         "sentence",
                         "function",
@@ -96,13 +98,10 @@ def upload_file():
                     ]
                 ]
 
-                # print(detailed_df.columns)
-
                 flash("File(s) successfully uploaded")
-
             else:
 
-                flash("Only upload PDF file(s) !")
+                flash("Upload file(s) in pdf format")
 
         return redirect("/")
 
@@ -126,7 +125,6 @@ def text_processing():
 
         choice1 = request.form.get("taskoption")  # Function
         choice2 = request.form.get("taskoption2")  # Industry
-        # print(detailed_df)
 
         exhibit_ind = detailed_df.loc[detailed_df["industry"] == "exhibit"]["usecase"]
         exhibit_fn = detailed_df.loc[detailed_df["function"] == "exhibit"]["usecase"]
