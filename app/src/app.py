@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 from preprocessing import PDFCorpus
 from usecase_indicator import usecase_indicator
 from download_model import download_model
+from qna import qa
 
 # support for downloading the model in the background
 # while preprocessing
@@ -67,11 +68,11 @@ def upload_file():
             if file and allowed_file(file.filename):
 
                 filename = secure_filename(file.filename)
-
-                #<to be deleted maybe
                 global detailed_df
-                global paragraphs_df                
-                #to be deleted maybe>
+
+                # #<to be deleted maybe
+                # global paragraphs_df                
+                # #to be deleted maybe>
 
                 file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
                 pdf_corpus.add_pdf(os.path.join(UPLOAD_FOLDER, filename))
@@ -84,49 +85,49 @@ def upload_file():
                 sys.stdout.flush()
 
                 
-                #<to be deleted maybe
-                docs_df = pdf_corpus.get_docs_df().copy()
+                # #<to be deleted maybe
+                # docs_df = pdf_corpus.get_docs_df().copy()
 
-                paragraphs_df = pdf_corpus.get_paragraphs_df().copy()
-                sentences_df = pdf_corpus.get_sentences_df().copy()
-                tokens_df = pdf_corpus.get_tokens_df().copy()
+                # paragraphs_df = pdf_corpus.get_paragraphs_df().copy()
+                # sentences_df = pdf_corpus.get_sentences_df().copy()
+                # tokens_df = pdf_corpus.get_tokens_df().copy()
 
-                detailed_df = tokens_df[["token"]].copy()
-                detailed_df["doc_name"] = tokens_df["doc_id"].apply(
-                    lambda x: docs_df.loc[x, "name"]
-                )
-                detailed_df["paragraph"] = tokens_df["paragraph_id"].apply(
-                    lambda x: paragraphs_df.loc[x, "paragraph"]
-                )
-                detailed_df["sentence"] = tokens_df["sentence_id"].apply(
-                    lambda x: sentences_df.loc[x, "sentence"]
-                )
-                detailed_df["paragraph_id"] = tokens_df["paragraph_id"].apply(
-                    lambda x: tokens_df.loc[x, "paragraph_id"]
-                )
+                # detailed_df = tokens_df[["token"]].copy()
+                # detailed_df["doc_name"] = tokens_df["doc_id"].apply(
+                #     lambda x: docs_df.loc[x, "name"]
+                # )
+                # detailed_df["paragraph"] = tokens_df["paragraph_id"].apply(
+                #     lambda x: paragraphs_df.loc[x, "paragraph"]
+                # )
+                # detailed_df["sentence"] = tokens_df["sentence_id"].apply(
+                #     lambda x: sentences_df.loc[x, "sentence"]
+                # )
+                # detailed_df["paragraph_id"] = tokens_df["paragraph_id"].apply(
+                #     lambda x: tokens_df.loc[x, "paragraph_id"]
+                # )
 
-                usecase_df = pd.read_csv(
-                    "./assets/most_likely_usecase_per_paragraph.csv"
-                )
-                detailed_df["function"] = usecase_df["function"]
-                detailed_df["industry"] = usecase_df[
-                    "industry"
-                ]  # .apply(lambda x: usecase_df.loc[x, 'industry'])
-                detailed_df["usecase"] = usecase_df[
-                    "usecase"
-                ]  # .apply(lambda x: usecase_df.loc[x, 'usecase'])
-                detailed_df = detailed_df[
-                    [
-                        "doc_name",
-                        "paragraph_id",
-                        "paragraph",
-                        "sentence",
-                        "function",
-                        "industry",
-                        "usecase",
-                    ]
-                ]                
-                #to be deleted maybe>
+                # usecase_df = pd.read_csv(
+                #     "./assets/most_likely_usecase_per_paragraph.csv"
+                # )
+                # detailed_df["function"] = usecase_df["function"]
+                # detailed_df["industry"] = usecase_df[
+                #     "industry"
+                # ]  # .apply(lambda x: usecase_df.loc[x, 'industry'])
+                # detailed_df["usecase"] = usecase_df[
+                #     "usecase"
+                # ]  # .apply(lambda x: usecase_df.loc[x, 'usecase'])
+                # detailed_df = detailed_df[
+                #     [
+                #         "doc_name",
+                #         "paragraph_id",
+                #         "paragraph",
+                #         "sentence",
+                #         "function",
+                #         "industry",
+                #         "usecase",
+                #     ]
+                # ]                
+                # #to be deleted maybe>
 
 
                 flash("File(s) successfully uploaded")
@@ -156,6 +157,10 @@ def upload_file():
 
         # then we apply QnA to the selected paragraphs
 
+
+        detailed_df = qa(usecase_indication)
+
+
         # in the end we flash the result is ready and show the button
         flash(f'Text interpretation finished')
 
@@ -166,9 +171,9 @@ def upload_file():
 def text():
     if request.method == "POST":
         global detailed_df
-        global paragraphs_df
+        # global paragraphs_df
         global text
-        text = paragraphs_df["paragraph"]
+        text = detailed_df["paragraph"]
 
         return render_template("text_extractor.html", text=text)
 
