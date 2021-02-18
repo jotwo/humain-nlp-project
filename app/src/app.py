@@ -52,6 +52,10 @@ def upload_file():
     # to other routes
     global results_df
 
+    # heroku might delete one of the model files while our dyno is running
+    # download it again if needed when executing an upload
+    threading.Thread(target=download_model).start()
+
     if request.method == "POST":
         if "files[]" not in request.files:
             flash("no file part")
