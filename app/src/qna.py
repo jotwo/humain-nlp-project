@@ -7,11 +7,13 @@ def qa(usecase_indication):
     # I commented following 2 lines
     # model = BertForQuestionAnswering.from_pretrained  ('bert-large-uncased-whole-word-masking-finetuned-squad') # 1-load Bert from online
     # model.save_pretrained("./BertLSquad") # to save the model for regualar local use 
-    model = BertForQuestionAnswering.from_pretrained('./BertLSquad') #2- open saved model 
+    model = BertForQuestionAnswering.from_pretrained('./BertLSquad') #2- open saved model
+    print('QnA model loaded')
     tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
+    print('tokenizer loaded')
     df1 = pd.DataFrame(columns=['industry','function', 'usecase', 'paragraph_id'])
 
-    def answer_question(question, answer_text):
+    def answer_question(tokenizer, question, answer_text):
         '''
         Takes a `question` string and an `answer_text` string (which contains the
         answer), and identifies the words within the `answer_text` that are the
@@ -90,7 +92,7 @@ def qa(usecase_indication):
         answer_text=all_paragraphs[i]
         if paragraphs != counter :        
             for question in questions:
-                answer = answer_question(question, answer_text)            
+                answer = answer_question(tokenizer, question, answer_text)            
                 if question == "Which industries?":
                     industry = answer
                 elif question == "What is main idea?":

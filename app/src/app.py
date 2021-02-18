@@ -114,6 +114,8 @@ def upload_file():
 
 
         detailed_df = qa(usecase_indication)
+        print('QnA done')
+
 
 
         # in the end we flash the result is ready and show the button
