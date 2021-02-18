@@ -61,6 +61,7 @@ tensorflow-estimator==2.3.0
 termcolor==1.1.0
 thinc==8.0.1
 tokenizers==0.10.1
+torch==1.7.1+cpu
 tqdm==4.56.2
 transformers==4.3.2
 typer==0.3.2
