@@ -54,6 +54,10 @@ def upload_file():
 
         files = request.files.getlist("files[]")
 
+        # we only want to interpret the newly uploaded files
+        # initiate the counter
+        new_uploads = 0
+
         for file in files:
 
             if file and allowed_file(file.filename):
@@ -64,13 +68,17 @@ def upload_file():
 
                 pdf_corpus.add_pdf(os.path.join(UPLOAD_FOLDER, filename))
 
+                new_uploads += 1
+
+                flash(f'Preprocessed {file.filename}')
+
                 # # no need to create copies of the dataframes I think
                 # docs_df = pdf_corpus.get_docs_df().copy()
                 # paragraphs_df = pdf_corpus.get_paragraphs_df().copy()
                 # sentences_df = pdf_corpus.get_sentences_df().copy()
                 # tokens_df = pdf_corpus.get_tokens_df().copy()
 
-                print(pdf_corpus.get_docs_df())
+                print(pdf_corpus.get_docs_df().iloc[-1].to_string(index=True))
                 # flushing the output buffer makes the print message available
                 # on heroku log
                 sys.stdout.flush()
@@ -82,15 +90,26 @@ def upload_file():
                 flash("Only PDF file(s) supported")
                 break
 
-        # when preprocessing is successful
-        else:
-            flash("File(s) successfully processed")
-
         # after all files are added to the corpus we can start postprocessing
-        # first we only select paragraphs with usecase sentences
-        usecase_indication = usecase_indicator(pdf_corpus.get_sentences_df(),
+        # first we only select paragraphs with usecase sentences in newly
+        # uploaded files
+        new_doc_ids = pdf_corpus.get_docs_df().index[new_uploads*-1:]
+        new_doc_sentences_df = pdf_corpus.get_sentences_df().loc\
+                                [pdf_corpus.get_sentences_df().doc_id\
+                                    .isin(new_doc_ids)]
+        usecase_indication = usecase_indicator(new_doc_sentences_df,
                                                 'usecase_indicator.h5',
                                                 quality = 1.4)
+        counter = 0
+        for i, row in usecase_indication.iterrows():
+            if counter < 20:
+                print(row['sentence'])
+                counter += 1
+            else:
+                break
+        print(len(usecase_indication))
+
+        flash(f'BERT Sequence classification completed')
 
         # then we apply QnA to the selected paragraphs
         
