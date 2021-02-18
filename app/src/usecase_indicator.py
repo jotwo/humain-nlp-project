@@ -1,10 +1,5 @@
-
-# import numpy as np
-# import pandas as pd
-# import tensorflow_addons as tfa
 from tensorflow import keras
-from transformers import BertTokenizer, BertConfig
-# from transformers import TFBertModel
+from transformers import BertTokenizer, BertConfig, TFBertModel
 
 
 def usecase_indicator(corpus, n_last, model: str, quality: float = 3.5):
