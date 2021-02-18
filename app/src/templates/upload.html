@@ -7,7 +7,8 @@
         .flashes{
         color:green;
         font-style:italic;
-        }
+
+
     </style>
 </head>
 <body>
@@ -42,16 +43,22 @@ You can upload pdf file(s) to get the required content.<br />
 <p>
     {% with messages=get_flashed_messages() %}
     {% if messages %}
+
     <ul class="flashes">
     {% for message in messages %}
+
     <li> {{message}}</li>
+
+{% endfor %}
     <form action="/text" method="post" class="form1">
 <p>
     <input type="submit" value="Check Content" formaction="/text">
-</p></form>
-    {% endfor %}
-</ul>
+</p></form></ul>
 {% endif %}
+
+
+
+
 {% endwith %}
 </body>
 </html>
