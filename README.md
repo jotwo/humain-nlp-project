@@ -18,7 +18,7 @@ The applications that publishes articles on daily news, entertainment, sports de
 * Atomization and simplification of applications and companies operations
 
 ## Input/Output Flow
-
+![Flow Diagram](https://drive.google.com/file/d/1JuQWMdJcXJfkjt0hnDm4hE6_HdL9EkCO/view?usp=sharing)
 ## Modules
 1. Upload pdf file(s)
 2. Preprocessing
