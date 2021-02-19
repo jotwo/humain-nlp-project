@@ -25,7 +25,8 @@ The overall system works by uploading the pdf file(s) and generates the summariz
 ## Modules
 1. Upload pdf file(s)
 2. Preprocessing
-3. Classifying the sentences
+3. Classifying the sentences  
+      
     The goal here is to find the use case highlights for presentation to the user, and to point out paragrapshs that the next Question
     Answering component should focus on.
     We built a dataset of 450 sentences by selection from the provided data, half of which true use cases. Intuitively and generally
