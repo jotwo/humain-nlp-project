@@ -26,12 +26,18 @@ The overall system works by uploading the pdf file(s) and generates the summariz
 1. Upload pdf file(s)
 2. Preprocessing
 3. Classifying the sentences
-4. Building QA system
-5. Building an App
+    The goal here is to find the use case highlights for presentation to the user, and to point out paragrapshs that the next Question
+    Answering component should focus on.
+    We built a dataset of 450 sentences by selection from the provided data, half of which true use cases. Intuitively and generally
+    they were mostly a formulation of some type of action that contributed to a business value, and we set out to model this by using
+    feature extraction from the BERT uncased model. Ater finetuning on 80% of the data, our classification reached 95% validation
+    accuracy.
+5. Building QA system
+6. Building an App
 
 ## Team
 * Joachim Kotek
-* Philippe Flimmer
+* Philippe Fimmers
 * Orhan Nurkan
 * Manasa Noolu
 
