@@ -18,7 +18,7 @@ The applications that publishes articles on daily news, entertainment, sports de
 * Atomization and simplification of applications and companies operations
 
 ## Input/Output Flow
-![Flow Diagram](https://drive.google.com/file/d/1JuQWMdJcXJfkjt0hnDm4hE6_HdL9EkCO/view?usp=sharing)
+<img src="https://github.com/jotwo/humain-nlp-project/blob/manasa2/humain-nlp-project-jo/src/HumAInFlowDiagram.jpg" alt="alt text" width=500 height=300>
 ## Modules
 1. Upload pdf file(s)
 2. Preprocessing
