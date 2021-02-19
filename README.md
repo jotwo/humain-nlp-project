@@ -22,7 +22,7 @@ The applications that publishes articles on daily news, entertainment, sports de
 ## Modules
 1. Upload pdf file(s)
 2. Preprocessing
-3. Tokenizing the sentences
+3. Classifying the sentences
 4. Building QA system
 5. Building an App
 
