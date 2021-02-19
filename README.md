@@ -19,6 +19,7 @@ The applications that publishes articles on daily news, entertainment, sports de
 
 ## Input/Output Flow
 <img src="https://github.com/jotwo/humain-nlp-project/blob/manasa2/humain-nlp-project-jo/src/HumAInFlowDiagram.jpg" alt="alt text" width=500 height=300>
+
 ## Modules
 1. Upload pdf file(s)
 2. Preprocessing
