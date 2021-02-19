@@ -128,7 +128,7 @@ def text():
         global detailed_df
         # global paragraphs_df
         global text
-        text = detailed_df["paragraph"]
+        text = detailed_df["paragraph"].to_string(index=False)
 
         return render_template("text_extractor.html", text=text)
 
