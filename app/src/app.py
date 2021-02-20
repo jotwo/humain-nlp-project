@@ -125,64 +125,51 @@ def upload_file():
 @app.route("/text", methods=["POST"])
 def text():
     if request.method == "POST":
-        global detailed_df
-        # global paragraphs_df
-        global text
+        global detailed_df, industry_list, function_list, text
+
+        if os.path.isfile("result.pkl"):
+            with open('result.pkl', 'rb') as f:
+                detailed_df = load(f)
+
+        industry_list = list(detailed_df['industry'].unique())
+
+        function_list = list(detailed_df['function'].unique())
+
         text = detailed_df["paragraph"].to_string(index=False)
 
-        return render_template("text_extractor.html", text=text)
+        return render_template("text_extractor.html", text=text, industry_list=industry_list,
+                               function_list=function_list)
 
 
 @app.route("/process", methods=["POST"])
 def text_processing():
     if request.method == "POST":
-        global detailed_df
-        global text, results, num_of_results
+        global detailed_df, text, results, num_of_results, industry_list, function_list
 
-        choice1 = request.form.get("taskoption")  # Function
-        choice2 = request.form.get("taskoption2")  # Industry
+        choice1 = request.form.get("industry_list")  # Industry
+        choice2 = request.form.get("function_list")  # Function
 
-        c_ind = detailed_df.loc[detailed_df["industry"] == "communications"]["usecase"]
-        c_fn = detailed_df.loc[detailed_df["function"] == "communications"]["usecase"]
-        dr_ind = detailed_df.loc[detailed_df["industry"] == "make every year fail to deliver the best price"]["usecase"]
-        dr_fn = detailed_df.loc[detailed_df["function"] == "make every year fail to deliver the best price"]["usecase"]
-        pa_ind = detailed_df.loc[detailed_df["industry"] == "companies"]["usecase"]
-        pa_fn = detailed_df.loc[detailed_df["function"] == "actively manage performance"]["usecase"]
-        sf_ind = detailed_df.loc[detailed_df["industry"] == "sales force with useful targets"]["usecase"]
-        sf_fn = detailed_df.loc[detailed_df["function"] == "support the sales force with useful targets"]["usecase"]
+        if choice1 in industry_list:
+            uc = detailed_df.loc[detailed_df["industry"] == choice1]["usecase"]
 
-        if choice1 == "communications" or choice2 == "communications":
-            results = c_ind
-            text = detailed_df.loc[detailed_df["industry"] == "communications"]["paragraph"].to_string(index=False)
-            num_of_results = len(results)
+            results = uc
 
-        if choice1 == "make every year fail to deliver the best price" or choice2 == "make every year fail to deliver the best price":
-            results = dr_ind
-            text = detailed_df.loc[detailed_df["industry"] == "make every year fail to deliver the best price"][
-                "paragraph"].to_string(index=False)
-            num_of_results = len(results)
+            text = detailed_df.loc[detailed_df["industry"] == choice1]["paragraph"].to_string(index=False)
 
-        if choice1 == "actively manage performance" or choice2 == "companies":
-            results = pa_ind
-            text = detailed_df.loc[detailed_df["industry"] == "companies"]["paragraph"].to_string(index=False)
-            num_of_results = len(results)
-
-        if choice1 == "support the sales force with useful targets" or choice2 == "sales force with useful targets":
-            results = sf_ind
-            text = detailed_df.loc[detailed_df["industry"] == "sales force with useful targets"]["paragraph"].to_string(
-                index=False)
             num_of_results = len(results)
 
     return render_template("text_extractor.html", results=results, num_of_results=num_of_results)
 
+
 @app.route("/files")
 def display_files():
     global detailed_df
-    global text, results, num_of_results
+    global text, results, num_of_results, industry_list, function_list
     text = text
-    return render_template(
-        "text_extractor.html", results=results, num_of_results=num_of_results, text=text
-    )
+
+    return render_template("text_extractor.html", results=results, num_of_results=num_of_results, text=text,
+                           industry_list=industry_list,
+                           function_list=function_list)
 
 
 if __name__ == "__main__":
