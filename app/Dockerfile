@@ -17,6 +17,7 @@ COPY docker_requirements.txt /app
 WORKDIR /app
 RUN pip3 install --upgrade pip
 RUN pip3 install -r docker_requirements.txt
+RUN pip3 install torch==1.7.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
 # files paths in py scripts will be parsed relative to WORKDIR
 WORKDIR /

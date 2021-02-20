@@ -1,19 +1,15 @@
 import os
 import sys
 import threading
+from pickle import load
+
 import pandas as pd
-
-import sys
-import threading
-
 from flask import Flask, flash, request, redirect, render_template
-
 from werkzeug.utils import secure_filename
 
-from preprocessing import PDFCorpus
-from usecase_indicator import usecase_indicator
 from download_model import download_model
-from qna import qa
+from background_thread import process
+from preprocessing import PDFCorpus
 
 # support for downloading the model in the background
 # while preprocessing
@@ -24,25 +20,18 @@ app = Flask(__name__)
 app.secret_key = "secret key"  # for encrypting the session
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
-ALLOWED_EXTENSIONS = {"pdf"}
-
 UPLOAD_FOLDER = "../uploads"
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 if not os.path.isdir(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)
 
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {"pdf"}
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # seting the maximum column width to display all columns
 pd.set_option("display.max_colwidth", None)
-
-pdf_corpus = PDFCorpus()
-
-nlp = pdf_corpus.nlp
-
-
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route("/")
@@ -53,13 +42,6 @@ def upload_form():
 @app.route("/", methods=["POST"])
 def upload_file():
 
-    # The postprocessing result will be available in other routes
-    global detailed_df
-
-    # heroku might delete one of the model files while our dyno is running
-    # download it again if needed when executing an upload
-    threading.Thread(target=download_model).start()
-
     if request.method == "POST":
         if "files[]" not in request.files:
             flash("no file part")
@@ -67,56 +49,28 @@ def upload_file():
 
         files = request.files.getlist("files[]")
 
-        # we only want to interpret the newly uploaded files
-        # initiate the counter
-        new_uploads = 0
-
         for file in files:
 
             if file and allowed_file(file.filename):
 
                 filename = secure_filename(file.filename)
-
                 file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-                pdf_corpus.add_pdf(os.path.join(UPLOAD_FOLDER, filename))
-
-                new_uploads += 1
-
-                print(pdf_corpus.get_docs_df().iloc[-1].to_string())
-                # flushing the output buffer makes the print message available
-                # on heroku log
-                sys.stdout.flush()
 
             else:
                 flash("Only PDF file(s) are supported")
-                break
+                return
 
-        # after all files are added to the corpus we can start postprocessing
-        # first we only select paragraphs with usecase sentences in newly
-        # uploaded files
-        usecase_indication = usecase_indicator(corpus = pdf_corpus,
-                                                n_last = new_uploads,
-                                                model = 'usecase_indicator.h5',
-                                                quality = 1.4)
-        
-        # Show the top 10 results of the classification in the console
-        print(f'{len(usecase_indication)} usecases found')
-        sys.stdout.flush()
-        counter = 0
-        for i, row in usecase_indication.iterrows():
-            if counter < 10:
-                print(row['sentence'])
-                sys.stdout.flush()
-                counter += 1
-            else:
-                break
+        pdf_corpus = PDFCorpus()
+        nlp = pdf_corpus.nlp
 
-        # then we apply QnA to the selected paragraphs
-        detailed_df = qa(usecase_indication)
-        print('QnA done')
+        # strat processing function as a thread
+        threading.Thread(target=process, args = (
+                                    app.config["UPLOAD_FOLDER"],
+                                    pdf_corpus,
+                                    files)).start()
 
         # in the end we flash the result is ready and show the button
-        flash(f'Text interpretation finished')
+        flash(f'The result should be available in 15 mins')
 
         return redirect("/")
 
@@ -124,10 +78,13 @@ def upload_file():
 @app.route("/text", methods=["POST"])
 def text():
     if request.method == "POST":
+        # make detailed_df available globally
         global detailed_df
+        with open('detailed_df.pkl', 'rb') as f:
+            detailed_df = load(f)
         # global paragraphs_df
         global text
-        text = detailed_df["paragraph"]
+        text = detailed_df["paragraph"].to_string(index = False)
 
         return render_template("text_extractor.html", text=text)
 
@@ -187,4 +144,4 @@ if __name__ == "__main__":
     # multiple user access support
     # You will also define the host to "0.0.0.0" because localhost
     # will only be reachable from inside de server.
-    app.run(host="0.0.0.0", threaded=True, debug=True, port=port)
+    app.run(host="0.0.0.0", threaded=True, debug=False, port=port)

@@ -30,12 +30,12 @@ def download_model():
         not Path("modelqna_downloaded").is_file()
         or not Path("./BertLSquad/pytorch_model.bin").is_file()
     ):
-        print(f"Started model 2/2 download in background")
+        print('Started model 2/2 download in background')
         sys.stdout.flush()
         model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
         model.save_pretrained("./BertLSquad")
         open("modelqna_downloaded", "w").close()
-        print("Model 2/2 download completed")
+        print('Model 2/2 download completed')
         sys.stdout.flush()
 
     return

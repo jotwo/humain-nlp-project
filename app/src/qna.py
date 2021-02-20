@@ -1,3 +1,4 @@
+import sys
 import torch 
 from transformers import BertForQuestionAnswering, BertTokenizer
 import pandas as pd
@@ -9,8 +10,8 @@ def qa(usecase_indication):
     # model.save_pretrained("./BertLSquad") # to save the model for regualar local use 
     model = BertForQuestionAnswering.from_pretrained('./BertLSquad') #2- open saved model
     print('QnA model loaded')
+    sys.stdout.flush()
     tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
-    print('tokenizer loaded')
     df1 = pd.DataFrame(columns=['industry','function', 'usecase', 'paragraph_id'])
 
     def answer_question(tokenizer, question, answer_text):
@@ -87,6 +88,7 @@ def qa(usecase_indication):
     counter=0 
     questions=["Which industries?" , "What is main idea?", "what kind of application?"]
     print("process is started ---------------------------------------")
+    sys.stdout.flush()
     all_paragraphs = usecase_indication["paragraph"]
     for i in range(counter,len(all_paragraphs)):        
         answer_text=all_paragraphs[i]
@@ -101,6 +103,7 @@ def qa(usecase_indication):
                     ai_function = answer            
             df1 = df1.append({'industry': industry,'function':ai_function, 'usecase':use_case, 'paragraph_id':philippe[i]}, ignore_index=True) 
             print(counter, end = ' ')
+            sys.stdout.flush()
             counter += 1
         else:
             break

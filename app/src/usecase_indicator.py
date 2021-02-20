@@ -1,8 +1,11 @@
 """This unction implements the usecase model for classification of sentences"""
+import sys
 from tensorflow import keras
 from transformers import BertTokenizer, BertConfig, TFBertModel
 import numpy as np
 import pandas as pd
+from download_model import download_model
+from qna import qa
 
 
 def usecase_indicator(corpus, n_last, model: str, quality: float = 1.4):
@@ -61,5 +64,12 @@ def usecase_indicator(corpus, n_last, model: str, quality: float = 1.4):
         validate="one_to_one",
     )
 
-    return result
+    # heroku might have again deleted the QnA model because it's so big
+    download_model()
+
+    detailed_df = qa(result)
+    print('QnA done')
+    sys.stdout.flush()
+
+    return detailed_df
 
