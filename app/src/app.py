@@ -30,7 +30,7 @@ def allowed_file(filename):
     ALLOWED_EXTENSIONS = {"pdf"}
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# seting the maximum column width to display all columns
+# setting the maximum column width to display all columns
 pd.set_option("display.max_colwidth", None)
 
 
@@ -79,61 +79,53 @@ def upload_file():
 def text():
     if request.method == "POST":
         # make detailed_df available globally
-        global detailed_df
-        with open('detailed_df.pkl', 'rb') as f:
-            detailed_df = load(f)
-        # global paragraphs_df
-        global text
-        text = detailed_df["paragraph"].to_string(index = False)
+        global detailed_df, industry_list, function_list, text
 
-        return render_template("text_extractor.html", text=text)
+        if os.path.isfile("detailed_df.pkl"):
+            with open('detailed_df.pkl', 'rb') as f:
+                detailed_df = load(f)
+
+        # global paragraphs_df
+        text = detailed_df["sentence"].to_string(index = False)
+
+        industry_list = list(detailed_df['industry'].unique())
+
+        function_list = list(detailed_df['function'].unique())
+
+        return render_template("text_extractor.html", text=text, industry_list=industry_list,
+                               function_list=function_list)
 
 
 @app.route("/process", methods=["POST"])
 def text_processing():
     if request.method == "POST":
-        global detailed_df
-        global text, results, num_of_results
+        global detailed_df, text, results, num_of_results, industry_list, function_list
 
-        choice1 = request.form.get("taskoption")  # Function
-        choice2 = request.form.get("taskoption2")  # Industry
+        choice1 = request.form.get("industry_list")  # Industry
+        choice2 = request.form.get("function_list")  # Function
 
-        exhibit_ind = detailed_df.loc[detailed_df["industry"] == "exhibit"]["usecase"]
-        exhibit_fn = detailed_df.loc[detailed_df["function"] == "exhibit"]["usecase"]
-        dr_ind = detailed_df.loc[detailed_df["industry"] == "data richness"]["usecase"]
-        dr_fn = detailed_df.loc[detailed_df["function"] == "data richness"]["usecase"]
-        pa_ind = detailed_df.loc[detailed_df["industry"] == "predictive analytics"][
-            "usecase"
-        ]
-        pa_fn = detailed_df.loc[detailed_df["function"] == "productivity and growth"][
-            "usecase"
-        ]
-        if choice1 == "exhibit" or choice2 == "exhibit":
-            results = exhibit_ind
-            text = detailed_df["paragraph"]
+        if choice1 in industry_list:
+            text = detailed_df.loc[detailed_df["industry"] == choice1] 
+        else:
+            text = detailed_df
 
-            num_of_results = len(results)
-        if choice1 == "data richness" or choice2 == "data richness":
-            results = dr_ind
-            text = detailed_df["paragraph"]
-            num_of_results = len(results)
-        if choice1 == "predictive analytics" or choice2 == "productivity and growth":
-            results = pa_ind
-            text = detailed_df["paragraph"]
-            num_of_results = len(results)
+        if choice2 in function_list:
 
-    return render_template(
-        "text_extractor.html", results=results, num_of_results=num_of_results
-    )
+            text = text.loc[detailed_df["function"] == choice2]
+
+        text = text['sentence'].to_string(index = False)
+
+    return render_template("text_extractor.html", text = text)
 
 @app.route("/files")
 def display_files():
     global detailed_df
-    global text, results, num_of_results
+    global text, results, num_of_results, industry_list, function_list
     text = text
-    return render_template(
-        "text_extractor.html", results=results, num_of_results=num_of_results, text=text
-    )
+
+    return render_template("text_extractor.html", results=results, num_of_results=num_of_results, text=text,
+                           industry_list=industry_list,
+                           function_list=function_list)
 
 
 if __name__ == "__main__":
