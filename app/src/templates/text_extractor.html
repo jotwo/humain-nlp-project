@@ -10,6 +10,12 @@
     crossorigin="anonymous">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="main.js"></script>
+    <script>
+         mark {
+        background-color: white;
+        color: black;
+        }
+    </script>
 </head>
 <body>
     <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
@@ -21,7 +27,7 @@
   <div class="collapse navbar-collapse" id="navbarsExampleDefault">
     <ul class="navbar-nav mr-auto">
       <li class="nav-item active">
-        <!--<a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>-->
+        <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
       </li>
       <li class="nav-item">
         <!--<a class="nav-link" href="#">About</a>-->
@@ -46,20 +52,20 @@
                     <label>Your Text</label>
             <textarea type="text" rows="5" cols="5" class="form-control"  name="rawtext" required="true"> {{text}}  </textarea>
             <br/>
-            <select class="form-control" name="taskoption">
-			  <option selected>Select Function</option>
-			  <option value="communications">communications</option>
-			  <option value="make every year fail to deliver the best price">make every year fail to deliver the best price</option>
-			  <option value="actively manage performance">actively manage performance</option>
-              <option value="support the sales force with useful targets">support the sales force with useful targets</option>
-			</select>
-			<br/>
-            <select class="form-control" name="taskoption2">
+            <select class="form-control" name="industry_list">
 			  <option selected>Select Industry</option>
-			  <option value="communications">communications</option>
-			  <option value="make every year fail to deliver the best price">make every year fail to deliver the best price</option>
-              <option value="companies">companies</option>
-              <option value="sales force with useful targets<">sales force with useful targets</option>
+			  {% for ind in industry_list %}
+                <option value="{{ind}}">{{ind}}</option>
+                 {% endfor %}
+
+            </select>
+			<br/>
+            <select class="form-control" name="function_list">
+                 <option selected>Select Function</option>
+			    {% for fn in function_list %}
+
+                <option value="{{fn}}">{{fn}}</option>
+                {% endfor %}
 
 
 			</select>
@@ -76,8 +82,8 @@
         <p class="alert-heading">Result</p>
         <p>Number of Records:{{num_of_results}}</p>
         <ul>{% for i in results %}
-        	<li><a href='/files'>{{i}}</a></li>
-        	{%endfor %}
+        	<li><a href='/files' >{{i}}</a> </li>
+        	{% endfor %}
     	</ul>
     	</div>
     </div>
@@ -85,5 +91,6 @@
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+
 </body>
 </html>
