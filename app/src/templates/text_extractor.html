@@ -49,8 +49,8 @@
 
         <form method="POST" action="/process">
             <div class="form-group">
-                    <label>Your Text</label>
-            <textarea type="text" rows="5" cols="5" class="form-control"  name="rawtext" required="true"> {{text}}  </textarea>
+                    <label>Filtered paragraphs</label>
+            <textarea type="text" rows="15" cols="5" class="form-control"  name="rawtext" required="true"> {{text}}  </textarea>
             <br/>
             <select class="form-control" name="industry_list">
 			  <option selected>Select Industry</option>
@@ -79,10 +79,10 @@
 
     <div class="container">
     	<div class="alert alert-success" role="alert">
-        <p class="alert-heading">Result</p>
+        <p class="alert-heading">Highlights</p>
         <p>Number of Records:{{num_of_results}}</p>
         <ul>{% for i in results %}
-        	<li><a href='/files' >{{i}}</a> </li>
+        	<li><a href='/files/{{i}}' >{{i}}</a> </li>
         	{% endfor %}
     	</ul>
     	</div>

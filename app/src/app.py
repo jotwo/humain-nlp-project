@@ -79,27 +79,32 @@ def upload_file():
 def text():
     if request.method == "POST":
         # make detailed_df available globally
-        global detailed_df, industry_list, function_list, text
+        global detailed_df, industry_list, function_list
 
         if os.path.isfile("detailed_df.pkl"):
             with open('detailed_df.pkl', 'rb') as f:
                 detailed_df = load(f)
 
-        # global paragraphs_df
-        text = detailed_df["sentence"].to_string(index = False)
+        paragraphs = detailed_df["paragraph"].to_string(index = False)
 
         industry_list = list(detailed_df['industry'].unique())
 
         function_list = list(detailed_df['function'].unique())
 
-        return render_template("text_extractor.html", text=text, industry_list=industry_list,
-                               function_list=function_list)
+        usecases = detailed_df["sentence"]
+
+        num_of_results = len(usecases)
+
+        return render_template("text_extractor.html", text=paragraphs, industry_list=industry_list,
+                               function_list=function_list,
+                               results = usecases,
+                               num_of_results = num_of_results)
 
 
 @app.route("/process", methods=["POST"])
 def text_processing():
     if request.method == "POST":
-        global detailed_df, text, results, num_of_results, industry_list, function_list
+        global detailed_df, industry_list, function_list
 
         choice1 = request.form.get("industry_list")  # Industry
         choice2 = request.form.get("function_list")  # Function
@@ -113,17 +118,27 @@ def text_processing():
 
             text = text.loc[detailed_df["function"] == choice2]
 
-        text = text['sentence'].to_string(index = False)
+        paragraphs = text['paragraph'].to_string(index = False)
 
-    return render_template("text_extractor.html", text = text)
+        usecases = text["sentence"]
 
-@app.route("/files")
-def display_files():
-    global detailed_df
-    global text, results, num_of_results, industry_list, function_list
-    text = text
+        num_of_results = len(usecases)
 
-    return render_template("text_extractor.html", results=results, num_of_results=num_of_results, text=text,
+    return render_template("text_extractor.html", text = paragraphs,
+                            industry_list=industry_list,
+                            function_list=function_list,
+                            results = usecases,
+                            num_of_results = num_of_results)
+
+@app.route("/files/<string:sentence>")
+def display_files(sentence):
+    global detailed_df, industry_list, function_list
+    
+    paragraphs = detailed_df.loc[
+                detailed_df["sentence"] == sentence,
+                'paragraph'].to_string(index = False)
+
+    return render_template("text_extractor.html", text=paragraphs,
                            industry_list=industry_list,
                            function_list=function_list)
 

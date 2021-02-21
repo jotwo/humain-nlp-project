@@ -48,21 +48,39 @@ def usecase_indicator(corpus, n_last, model: str, quality: float = 1.4):
     )
 
     new_sentences.loc[:, "usecase_score"] = y["usecase"].ravel()
-    sentences_df_filtered = new_sentences.loc[new_sentences["usecase_score"] > 1.4]
+    thresholded_sentences = new_sentences.loc[new_sentences[
+      "usecase_score"] > quality]
 
-    idx = (
-        sentences_df_filtered.groupby(["paragraph_id"])["usecase_score"].transform(max)
-        == sentences_df_filtered["usecase_score"]
+    thresholded_paragraph_ids = thresholded_sentences.paragraph_id.\
+      unique().tolist()
+
+
+
+    # concatenate full paragraph text for thresholded paragraph_ids
+    thresholded_paragraph_text = new_sentences.loc[
+      new_sentences.paragraph_id.isin(thresholded_paragraph_ids),
+      ['paragraph_id', 'sentence']].groupby(by = 'paragraph_id')[
+        'sentence'].apply(lambda x: '. '.join(x))
+
+    thresholded_paragraph_text.rename('paragraph', inplace=True)
+
+    maxed_sentences_idx = (
+        thresholded_sentences.groupby(["paragraph_id"])["usecase_score"].transform(max)
+        == thresholded_sentences["usecase_score"]
     )
 
     # join full paragraph text
-    result = sentences_df_filtered[idx].merge(
-        corpus.get_paragraphs_df()["paragraph"],
+    result = thresholded_sentences[maxed_sentences_idx].merge(
+        thresholded_paragraph_text,
         how="inner",
-        on="paragraph_id",
+        left_on="paragraph_id",
+        right_index = True,
         copy=False,
         validate="one_to_one",
-    )
+    ).reset_index(drop = True)
+
+    print('Classification done')
+    sys.stdout.flush()
 
     # heroku might have again deleted the QnA model because it's so big
     download_model()
