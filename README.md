@@ -4,8 +4,8 @@
 
 The applications that publishes articles on daily news, entertainment, sports demands for the platform that summarizes the text. Because of the busy schedule users prefer to read the sumary of the articles before deciding to read entire document/article. Reading a summary helps us to identify the relevant area of information that gives brief context of the story. Thus, summarization is the most essential application under natural language processing (NLP) that defines a task of producing a concise and fluent summary while preserving key information and semantic understanding.
 
-Our service is deployed on below link, you may get an Application error at first because our instance is waking from sleep. 
-[aaik.herokuapp.com](http://aaik.herokuapp.com)
+Our service is deployed on below link, you may get an Application error at first because our instance is waking from sleep.  
+#### [aaik.herokuapp.com](http://aaik.herokuapp.com)
 
 ## Problem Definition
 1. Not enough time to read AI industry reports
